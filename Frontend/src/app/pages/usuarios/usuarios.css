@@ -1,0 +1,85 @@
+/* Estilos para el contenedor principal del formulario */
+.login-container {
+  background-color: #ffffff;
+  padding: 30px;
+  border-radius: 10px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  max-width: 400px;
+  margin: 40px auto;
+  font-family: Arial, sans-serif;
+  transition: transform 0.3s ease;
+}
+
+/* Efecto de elevación al pasar el ratón */
+.login-container:hover {
+  transform: translateY(-5px);
+}
+
+/* Estilos del encabezado */
+.login-container h2 {
+  text-align: center;
+  color: #2c3e50;
+  margin-bottom: 25px;
+  font-size: 1.8em;
+  font-weight: 600;
+}
+
+/* Estilos del formulario */
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Estilos para los grupos de campos */
+.form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Estilos para las etiquetas */
+.form-group label {
+  font-weight: 500;
+  color: #34495e;
+  margin-bottom: 8px;
+  font-size: 1.1em;
+}
+
+/* Estilos para los campos de entrada de texto */
+.form-group input {
+  padding: 12px 15px;
+  border: 1px solid #bdc3c7;
+  border-radius: 8px;
+  font-size: 1em;
+  color: #333;
+  transition: all 0.3s ease;
+}
+
+/* Estilo al enfocar los campos */
+.form-group input:focus {
+  border-color: #3498db;
+  box-shadow: 0 0 8px rgba(52, 152, 219, 0.3);
+  outline: none;
+}
+
+/* Estilos para el botón de inicio de sesión */
+.login-button {
+  padding: 15px;
+  background-color: #3498db;
+  color: #ffffff;
+  border: none;
+  border-radius: 25px;
+  font-size: 1.1em;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-top: 10px;
+  box-shadow: 0 4px 8px rgba(52, 152, 219, 0.3);
+}
+
+/* Efecto al pasar el ratón sobre el botón */
+.login-button:hover {
+  background-color: #2980b9;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(41, 128, 185, 0.4);
+}

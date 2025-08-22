@@ -1,0 +1,87 @@
+/* Estilos para el contenedor principal de la lista de especialidades */
+.specialty-container {
+  font-family: Arial, sans-serif;
+  padding: 20px;
+  background-color: #f4f7f9;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  margin-top: 30px;
+}
+
+/* Estilos para el encabezado de la lista */
+.specialty-list-header {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.specialty-list-header h3 {
+  color: #2c3e50;
+  font-size: 1.5em;
+  margin-bottom: 5px;
+}
+
+.specialty-list-header p {
+  color: #7f8c8d;
+  font-size: 0.9em;
+}
+
+/* Contenedor de la lista de tarjetas con scroll vertical */
+.specialty-list-vertical {
+  display: flex;
+  flex-direction: column; /* Organiza las tarjetas verticalmente */
+  overflow-y: auto; /* Permite el scroll vertical */
+  max-height: 300px; /* Define la altura máxima para que aparezca el scroll */
+  gap: 15px; /* Espacio entre las tarjetas */
+  padding-right: 15px; /* Evita que el contenido toque la barra de scroll */
+}
+
+/* Ocultar la barra de scroll en navegadores Webkit */
+.specialty-list-vertical::-webkit-scrollbar {
+  width: 8px;
+}
+
+.specialty-list-vertical::-webkit-scrollbar-thumb {
+  background-color: #bdc3c7;
+  border-radius: 4px;
+}
+
+.specialty-list-vertical::-webkit-scrollbar-track {
+  background-color: #ecf0f1;
+}
+
+/* Estilos para cada tarjeta de especialidad */
+.specialty-card {
+  padding: 20px;
+  background-color: #ffffff;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.specialty-card p {
+  margin: 0;
+  font-size: 1.1em;
+  font-weight: 500;
+  color: #34495e;
+}
+
+/* Efecto al pasar el ratón por encima de la tarjeta */
+.specialty-card:hover {
+  transform: translateX(-5px); /* Efecto de desplazamiento lateral al pasar el ratón */
+  box-shadow: 5px 6px 15px rgba(0, 0, 0, 0.15);
+  background-color: #ecf0f1;
+}
+
+/* Estilo para la tarjeta seleccionada (se añade con JavaScript) */
+.specialty-card.selected {
+  background-color: #3498db;
+  color: #ffffff;
+  transform: translateX(-5px);
+  box-shadow: 5px 6px 15px rgba(0, 0, 0, 0.2);
+}
+
+.specialty-card.selected p {
+  color: #ffffff;
+}
