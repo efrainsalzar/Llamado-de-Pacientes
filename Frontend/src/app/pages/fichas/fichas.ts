@@ -1,31 +1,31 @@
 import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FichasService } from '../../services/fichas.service';
+import { Ficha } from '../../models/ficha.model';
 
 @Component({
   selector: 'app-fichas',
-  imports: [],
+  standalone: true,
+  imports: [CommonModule],
   templateUrl: './fichas.html',
-  styleUrl: './fichas.css'
+  styleUrls: ['./fichas.css']
 })
-
-
 export class Fichas {
+  fichas: Ficha[] = [];
+  cargando = true;
 
-}
+  constructor(private fichasService: FichasService) {}
 
-document.addEventListener('DOMContentLoaded', function() {
-  const specialtyCards = document.querySelectorAll('.specialty-card');
-
-  specialtyCards.forEach(card => {
-    card.addEventListener('click', () => {
-      // Elimina la clase 'selected' de todas las tarjetas
-      specialtyCards.forEach(c => c.classList.remove('selected'));
-
-      // Agrega la clase 'selected' a la tarjeta clicada
-      card.classList.add('selected');
-
-      // Opcional: Obtener el valor de la especialidad seleccionada
-      const selectedSpecialty = card.getAttribute('data-specialty');
-      console.log('Especialidad seleccionada:', selectedSpecialty);
+  ngOnInit(): void {
+    this.fichasService.getFichas().subscribe({
+      next: (data) => {
+        this.fichas = data;
+        this.cargando = false;
+      },
+      error: (err) => {
+        console.error('Error al cargar fichas:', err);
+        this.cargando = false;
+      }
     });
-  });
-});
+  }
+}
