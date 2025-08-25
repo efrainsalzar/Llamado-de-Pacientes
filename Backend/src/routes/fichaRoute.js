@@ -1,12 +1,10 @@
 const express = require('express');
 const router = express.Router();
-const { getFichas } = require('../controllers/fichaController');
+const fichaController = require('../controllers/fichaController');
 
-// Ruta flexible:
-//  - /fichas/hoy → fichas de hoy
-//  - /fichas/:fecha → fichas de fecha específica
-router.get('/hoy', getFichas);
-router.get('/:fecha', getFichas);
+// Rutas
+router.get('/hoy', fichaController.getFichasHoy);
+router.get('/:fecha', fichaController.getFichasporFecha);
+router.post('/', fichaController.crearFicha);
 
 module.exports = router;
-
