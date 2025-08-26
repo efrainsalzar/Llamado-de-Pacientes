@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+/*import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { Ficha } from '../models/ficha.model'; // 🔹 solo este
@@ -15,3 +15,4 @@ export class FichasService {
     return this.http.get<Ficha[]>(this.apiUrl);
   }
 }
+*/

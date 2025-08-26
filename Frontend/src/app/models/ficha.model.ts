@@ -1,4 +1,4 @@
-export interface Ficha {
+/*export interface Ficha {
   id_ficha: number;
   id_paciente: number;
   fecha: string;           // 'YYYY-MM-DD'
@@ -7,4 +7,4 @@ export interface Ficha {
   hora_registro: string;    // 'HH:MM:SS'
   hora_llamado?: string;
   hora_finalizacion?: string;
-}
+}*/

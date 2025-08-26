@@ -12,7 +12,19 @@ const sequelize = new Sequelize(
       options: { encrypt: false, trustServerCertificate: true },
     },
     logging: false,
+    timezone: "-04:00" // UTC-4
   }
 );
+
+async function testConnection() {
+  try {
+    await sequelize.authenticate();
+    console.log("Conectado a la base de datos a las:", new Date().toLocaleString());
+  } catch (error) {
+    console.error("No se pudo conectar:", error);
+  }
+}
+
+testConnection();
 
 module.exports = sequelize;

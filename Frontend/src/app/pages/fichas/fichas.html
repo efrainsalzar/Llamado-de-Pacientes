@@ -1,16 +1,30 @@
-<h1>Lista de Fichas</h1>
+<div class="contenedor">
+  <h1>Lista de Fichas</h1>
 
-<div *ngIf="cargando">Cargando fichas...</div>
-
-<ul *ngIf="!cargando && fichas.length > 0">
-  <li *ngFor="let ficha of fichas">
-    <strong>ID Paciente: {{ ficha.id_paciente }}</strong>
-    - Fecha: {{ ficha.fecha }}
-    - Hora registro: {{ ficha.hora_registro }}
-    - Estado: {{ ficha.estado }}
-  </li>
-</ul>
-
-<div *ngIf="!cargando && fichas.length === 0">
-  No hay fichas registradas.
+  <table>
+    <thead>
+      <tr>
+        <th>ID Ficha</th>
+        <th>ID Paciente</th>
+        <th>Consultorio</th>
+        <th>Estado</th>
+        <th>Fecha</th>
+        <th>Hora Registro</th>
+        <th>Hora Llamado</th>
+        <th>Hora Finalización</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let ficha of fichas">
+        <td>{{ ficha.id_ficha }}</td>
+        <td>{{ ficha.id_paciente }}</td>
+        <td>{{ ficha.consultorio }}</td>
+        <td>{{ ficha.estado }}</td>
+        <td>{{ ficha.fecha }}</td>
+        <td>{{ ficha.hora_registro  }}</td>
+        <td>{{ ficha.hora_llamado || '-' }}</td>
+        <td>{{ ficha.hora_finalizacion || '-' }}</td>
+      </tr>
+    </tbody>
+  </table>
 </div>

@@ -1,31 +1,32 @@
-import { Component } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FichasService } from '../../services/fichas.service';
-import { Ficha } from '../../models/ficha.model';
+import { HttpClient, HttpClientModule } from '@angular/common/http';
 
 @Component({
   selector: 'app-fichas',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, HttpClientModule],
   templateUrl: './fichas.html',
   styleUrls: ['./fichas.css']
 })
-export class Fichas {
-  fichas: Ficha[] = [];
-  cargando = true;
-
-  constructor(private fichasService: FichasService) {}
+export class Fichas implements OnInit {
+  fichas: any[] = [];   // aquí guardamos los datos que vienen del backend
+  private http = inject(HttpClient);
 
   ngOnInit(): void {
-    this.fichasService.getFichas().subscribe({
-      next: (data) => {
-        this.fichas = data;
-        this.cargando = false;
-      },
-      error: (err) => {
-        console.error('Error al cargar fichas:', err);
-        this.cargando = false;
-      }
-    });
+    this.cargarFichas();
+  }
+
+  cargarFichas(): void {
+    this.http.get<any[]>('http://localhost:3000/')
+      .subscribe({
+        next: (data) => {
+          this.fichas = data;
+          console.log('Fichas cargadas:', this.fichas);
+        },
+        error: (err) => {
+          console.error('Error al obtener fichas:', err);
+        }
+      });
   }
 }
