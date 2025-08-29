@@ -2,12 +2,98 @@ const Ficha = require("../models/fichaModel");
 const sequelize = require("../config/db");
 const { getIO } = require("../config/socket");
 
+
+const obtenerFichasAnuales = async (req, res) => {
+  try {
+    const [fichas] = await sequelize.query(`
+      DECLARE @InicioAño DATETIME = DATEADD(YEAR, DATEDIFF(YEAR, 0, GETDATE()), 0);
+      DECLARE @InicioAñoSiguiente DATETIME = DATEADD(YEAR, DATEDIFF(YEAR, 0, GETDATE()) + 1, 0);
+
+      SELECT *
+      FROM dbo.vwFICHASPROGRAMADAS
+      WHERE Inicio >= @InicioAño
+        AND Inicio <  @InicioAñoSiguiente
+      ORDER BY Inicio, Ficha;
+    `);
+
+    res.status(200).json(fichas);
+  } catch (error) {
+    console.error("[ERROR obtenerFichasAnuales]", error.message);
+    res.status(500).json({
+      success: false,
+      message: "Error al obtener fichas anuales",
+      error: error.message
+    });
+  }
+};
+
+const obtenerFichasPorFecha = async (req, res) => {
+  try {
+    const { fecha } = req.query; // recibe yyyy-MM-dd
+    if (!fecha) {
+      return res.status(400).json({
+        success: false,
+        message: "Debe enviar una fecha en formato YYYY-MM-DD (ej: ?fecha=2025-01-02)"
+      });
+    }
+
+    const [fichas] = await sequelize.query(`
+      SELECT *
+      FROM dbo.vwFICHASPROGRAMADAS
+      WHERE CONVERT(date, Inicio) = :fecha
+      ORDER BY Inicio, Ficha;
+    `, {
+      replacements: { fecha } // evita SQL Injection
+    });
+
+    res.status(200).json(fichas);
+  } catch (error) {
+    console.error("[ERROR obtenerFichasPorFecha]", error.message);
+    res.status(500).json({
+      success: false,
+      message: "Error al obtener fichas por fecha",
+      error: error.message
+    });
+  }
+};
+const obtenerFichasPublicasPorFecha = async (req, res) => {
+  try {
+    const { fecha } = req.query; // formato YYYY-MM-DD
+    if (!fecha) {
+      return res.status(400).json({
+        success: false,
+        message: "Debe enviar una fecha en formato YYYY-MM-DD (ej: ?fecha=2025-01-02)"
+      });
+    }
+
+    const [fichas] = await sequelize.query(`
+      SELECT
+        Ficha,
+        paciente,
+        Horario,
+        Ticket,
+        Descripcion AS especialidad,
+        DesEstado AS estado
+      FROM dbo.vwFICHASPROGRAMADAS
+      WHERE CONVERT(date, Inicio) = :fecha
+      ORDER BY Inicio, Ficha;
+    `, {
+      replacements: { fecha }
+    });
+
+    res.status(200).json(fichas);
+  } catch (error) {
+    console.error("[ERROR obtenerFichasPublicasPorFecha]", error.message);
+    res.status(500).json({
+      success: false,
+      message: "Error al obtener fichas públicas",
+      error: error.message
+    });
+  }
+};
 // ======= FUNCIONES AUXILIARES =======
-
-// Fecha en formato YYYY-MM-DD
+/*
 const hoyString = () => new Date().toISOString().split("T")[0];
-
-// Hora en formato HH:MM:SS
 const horaString = () => new Date().toTimeString().split(" ")[0];
 
 // Atributos con formateo SQL
@@ -46,7 +132,7 @@ const obtenerFichas = handleRequest(async (req, res) => {
   res.status(200).json(fichas);
 });
 
-const getFichasHoy = handleRequest(async (req, res) => {
+/*const getFichasHoy = handleRequest(async (req, res) => {
   const fichas = await Ficha.findAll({
     attributes: formatearAtributosFicha(),
     raw: true,
@@ -176,4 +262,11 @@ module.exports = {
   iniciarAtencion,
   finalizarAtencion,
   cancelarAtencion
+};
+*/
+
+module.exports = {
+  obtenerFichasAnuales,
+  obtenerFichasPorFecha,
+  obtenerFichasPublicasPorFecha
 };
