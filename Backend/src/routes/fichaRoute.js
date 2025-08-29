@@ -4,7 +4,7 @@ const fichaController = require('../controllers/fichaController');
 
 router.get('/anuales', fichaController.obtenerFichasAnuales);
 router.get('/por-fecha', fichaController.obtenerFichasPorFecha);
-router.get('/publicas', fichaController.obtenerFichasPublicasPorFecha);
+router.get('/publicas/:fecha', fichaController.obtenerFichasPublicasPorFecha);
 /*router.get('/', fichaController.obtenerFichas);
 // Rutas
 router.get('/hoy', fichaController.getFichasHoy);

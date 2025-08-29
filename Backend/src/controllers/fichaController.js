@@ -56,32 +56,35 @@ const obtenerFichasPorFecha = async (req, res) => {
     });
   }
 };
+
 const obtenerFichasPublicasPorFecha = async (req, res) => {
   try {
-    const { fecha } = req.query; // formato YYYY-MM-DD
-    if (!fecha) {
-      return res.status(400).json({
-        success: false,
-        message: "Debe enviar una fecha en formato YYYY-MM-DD (ej: ?fecha=2025-01-02)"
-      });
-    }
+    const { fecha } = req.params; // 👈 capturamos la fecha de la URL
 
     const [fichas] = await sequelize.query(`
-      SELECT
-        Ficha,
-        paciente,
-        Horario,
-        Ticket,
-        Descripcion AS especialidad,
-        DesEstado AS estado
-      FROM dbo.vwFICHASPROGRAMADAS
-      WHERE CONVERT(date, Inicio) = :fecha
-      ORDER BY Inicio, Ficha;
+      SELECT 
+          f.Ficha AS NumeroFicha,
+          e.descripcion AS Estado,
+          a.Descripcion AS Actividad,
+          f.Inicio,
+          f.Fin,
+          f.Color,
+          f.TipoTicket,
+          f.Fecha
+      FROM tblFICHAS f
+      INNER JOIN tbESTADOFICHA e ON f.estadoFicha = e.idEstadoFicha
+      INNER JOIN tblPROGRAMACION p ON f.IdProgramacion = p.IDProgramacion
+      INNER JOIN tblACTIVIDAD a ON p.IdActividad = a.IDActividad
+      WHERE CONVERT(date, f.Fecha) = :fecha
+      ORDER BY f.Inicio;
     `, {
       replacements: { fecha }
     });
 
-    res.status(200).json(fichas);
+    res.status(200).json({
+      success: true,
+      data: fichas
+    });
   } catch (error) {
     console.error("[ERROR obtenerFichasPublicasPorFecha]", error.message);
     res.status(500).json({
@@ -91,6 +94,8 @@ const obtenerFichasPublicasPorFecha = async (req, res) => {
     });
   }
 };
+
+
 // ======= FUNCIONES AUXILIARES =======
 /*
 const hoyString = () => new Date().toISOString().split("T")[0];
