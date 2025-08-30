@@ -2,29 +2,12 @@
   <h1>Lista de Fichas</h1>
 
   <table>
-    <thead>
-      <tr>
-        <th>ID Ficha</th>
-        <th>ID Paciente</th>
-        <th>Consultorio</th>
-        <th>Estado</th>
-        <th>Fecha</th>
-        <th>Hora Registro</th>
-        <th>Hora Llamado</th>
-        <th>Hora Finalización</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr *ngFor="let ficha of fichas">
-        <td>{{ ficha.id_ficha }}</td>
-        <td>{{ ficha.id_paciente }}</td>
-        <td>{{ ficha.consultorio }}</td>
-        <td>{{ ficha.estado }}</td>
-        <td>{{ ficha.fecha }}</td>
-        <td>{{ ficha.hora_registro  }}</td>
-        <td>{{ ficha.hora_llamado || '-' }}</td>
-        <td>{{ ficha.hora_finalizacion || '-' }}</td>
-      </tr>
-    </tbody>
+    <tr *ngFor="let ficha of fichas">
+      <td>{{ficha.NumeroFicha}}</td>
+      <td>{{ficha.Ticket}}</td>
+      <td>{{ficha.TipoTicket}}</td>
+      <td>{{ficha.Estado}}</td>
+      <td>{{ficha.Actividad}}</td>
+    </tr>
   </table>
 </div>

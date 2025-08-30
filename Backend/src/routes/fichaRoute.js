@@ -2,9 +2,7 @@ const express = require('express');
 const router = express.Router();
 const fichaController = require('../controllers/fichaController');
 
-router.get('/anuales', fichaController.obtenerFichasAnuales);
-router.get('/por-fecha', fichaController.obtenerFichasPorFecha);
-router.get('/publicas/:fecha', fichaController.obtenerFichasPublicasPorFecha);
+router.get('/publicas/:idProgramacion/:fecha', fichaController.obtenerFichasPublicasPorFecha);
 /*router.get('/', fichaController.obtenerFichas);
 // Rutas
 router.get('/hoy', fichaController.getFichasHoy);

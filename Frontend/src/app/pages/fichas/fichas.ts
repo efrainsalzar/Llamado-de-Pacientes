@@ -22,10 +22,10 @@ export class Fichas implements OnInit {
 
   // Carga inicial de fichas
   cargarFichas(): void {
-    this.http.get<any[]>('http://localhost:3000/hoy')
+    this.http.get<any>('http://localhost:3000/publicas/390/2014-10-15')
       .subscribe({
-        next: (data) => {
-          this.fichas = data;
+        next: (res) => {
+          this.fichas = res.data;
           console.log('Fichas cargadas:', this.fichas);
         },
         error: (err) => {

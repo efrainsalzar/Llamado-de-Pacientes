@@ -1,84 +1,30 @@
-const Ficha = require("../models/fichaModel");
+//const Ficha = require("../models/fichaModel");
 const sequelize = require("../config/db");
-const { getIO } = require("../config/socket");
+//const { getIO } = require("../config/socket");
 
+// ======= CONSULTAS ESPECÍFICAS =======
 
-const obtenerFichasAnuales = async (req, res) => {
-  try {
-    const [fichas] = await sequelize.query(`
-      DECLARE @InicioAño DATETIME = DATEADD(YEAR, DATEDIFF(YEAR, 0, GETDATE()), 0);
-      DECLARE @InicioAñoSiguiente DATETIME = DATEADD(YEAR, DATEDIFF(YEAR, 0, GETDATE()) + 1, 0);
-
-      SELECT *
-      FROM dbo.vwFICHASPROGRAMADAS
-      WHERE Inicio >= @InicioAño
-        AND Inicio <  @InicioAñoSiguiente
-      ORDER BY Inicio, Ficha;
-    `);
-
-    res.status(200).json(fichas);
-  } catch (error) {
-    console.error("[ERROR obtenerFichasAnuales]", error.message);
-    res.status(500).json({
-      success: false,
-      message: "Error al obtener fichas anuales",
-      error: error.message
-    });
-  }
-};
-
-const obtenerFichasPorFecha = async (req, res) => {
-  try {
-    const { fecha } = req.query; // recibe yyyy-MM-dd
-    if (!fecha) {
-      return res.status(400).json({
-        success: false,
-        message: "Debe enviar una fecha en formato YYYY-MM-DD (ej: ?fecha=2025-01-02)"
-      });
-    }
-
-    const [fichas] = await sequelize.query(`
-      SELECT *
-      FROM dbo.vwFICHASPROGRAMADAS
-      WHERE CONVERT(date, Inicio) = :fecha
-      ORDER BY Inicio, Ficha;
-    `, {
-      replacements: { fecha } // evita SQL Injection
-    });
-
-    res.status(200).json(fichas);
-  } catch (error) {
-    console.error("[ERROR obtenerFichasPorFecha]", error.message);
-    res.status(500).json({
-      success: false,
-      message: "Error al obtener fichas por fecha",
-      error: error.message
-    });
-  }
-};
 
 const obtenerFichasPublicasPorFecha = async (req, res) => {
   try {
-    const { fecha } = req.params; // 👈 capturamos la fecha de la URL
+    const { idProgramacion, fecha } = req.params; 
 
     const [fichas] = await sequelize.query(`
       SELECT 
           f.Ficha AS NumeroFicha,
-          e.descripcion AS Estado,
-          a.Descripcion AS Actividad,
-          f.Inicio,
-          f.Fin,
-          f.Color,
+          f.Ticket,
           f.TipoTicket,
-          f.Fecha
+          e.descripcion AS Estado,
+          a.Descripcion AS Actividad
       FROM tblFICHAS f
-      INNER JOIN tbESTADOFICHA e ON f.estadoFicha = e.idEstadoFicha
+      INNER JOIN tblESTADOFICHA e ON f.estadoFicha = e.idEstadoFicha
       INNER JOIN tblPROGRAMACION p ON f.IdProgramacion = p.IDProgramacion
       INNER JOIN tblACTIVIDAD a ON p.IdActividad = a.IDActividad
-      WHERE CONVERT(date, f.Fecha) = :fecha
+      WHERE f.IdProgramacion = :idProgramacion 
+        AND CONVERT(date, f.Fecha) = :fecha
       ORDER BY f.Inicio;
     `, {
-      replacements: { fecha }
+      replacements: { idProgramacion, fecha }
     });
 
     res.status(200).json({
@@ -94,6 +40,34 @@ const obtenerFichasPublicasPorFecha = async (req, res) => {
     });
   }
 };
+
+
+module.exports = {
+  obtenerFichasPublicasPorFecha
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 // ======= FUNCIONES AUXILIARES =======
@@ -269,9 +243,3 @@ module.exports = {
   cancelarAtencion
 };
 */
-
-module.exports = {
-  obtenerFichasAnuales,
-  obtenerFichasPorFecha,
-  obtenerFichasPublicasPorFecha
-};
