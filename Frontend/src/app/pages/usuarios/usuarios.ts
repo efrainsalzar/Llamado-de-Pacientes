@@ -9,32 +9,31 @@ import { io, Socket } from 'socket.io-client';
   standalone: true,
   imports: [CommonModule, HttpClientModule, FormsModule],
   templateUrl: './usuarios.html',
-  styleUrls: ['./usuarios.css']
+  styleUrls: ['./usuarios.css'],
 })
 export class Usuarios implements OnInit {
   fichas: any[] = [];
-  medicos: any[] = [];                  // Lista de médicos
-  medicoSeleccionado: string = '';      // Médico elegido
-  fechaSeleccionada: string = '';       // Fecha elegida
+  medicos: any[] = []; // Lista de médicos
+  medicoSeleccionado: string = ''; // Médico elegido
+  fechaSeleccionada: string = ''; // Fecha elegida
 
   private http = inject(HttpClient);
   private socket!: Socket;
 
   ngOnInit(): void {
-    this.cargarMedicos();  // Traer lista de médicos
+    this.cargarMedicos(); // Traer lista de médicos
     this.conectarSocket();
   }
 
   // Traer lista de médicos desde backend
   cargarMedicos(): void {
-    this.http.get<any>('http://localhost:3000/medicos')
-      .subscribe({
-        next: (res) => {
-          this.medicos = res.data;
-          console.log('Médicos:', this.medicos);
-        },
-        error: (err) => console.error('Error al cargar médicos:', err)
-      });
+    this.http.get<any>('http://localhost:3000/medicos').subscribe({
+      next: (res) => {
+        this.medicos = res.data;
+        console.log('Médicos:', this.medicos);
+      },
+      error: (err) => console.error('Error al cargar médicos:', err),
+    });
   }
 
   // Capturar cambio de médico seleccionado
@@ -53,15 +52,15 @@ export class Usuarios implements OnInit {
     console.log('Fecha:', this.fechaSeleccionada);
     console.log('Médico:', this.medicoSeleccionado);
 
-    this.http.get<any>(
-      `http://localhost:3000/medico/${this.fechaSeleccionada}/${this.medicoSeleccionado}`
-    ).subscribe({
-      next: (res) => {
-        this.fichas = res.data;
-        console.log('Usuarios cargados:', this.fichas);
-      },
-      error: (err) => console.error('Error al obtener usuarios:', err)
-    });
+    this.http
+      .get<any>(`http://localhost:3000/medico/${this.fechaSeleccionada}/${this.medicoSeleccionado}`)
+      .subscribe({
+        next: (res) => {
+          this.fichas = res.data;
+          console.log('Usuarios cargados:', this.fichas);
+        },
+        error: (err) => console.error('Error al obtener usuarios:', err),
+      });
   }
 
   // Conexión a Socket.IO
@@ -70,6 +69,37 @@ export class Usuarios implements OnInit {
     this.socket.on('fichasActualizadas', (data: any[]) => {
       this.fichas = data;
       console.log('Fichas actualizadas en tiempo real:', this.fichas);
+    });
+  }
+
+  llamarSiguiente() {
+    // Buscar la primera ficha pendiente
+    const ficha = this.fichas.find((f) => f.EstadoFicha === 'En espera');
+    if (!ficha) {
+      console.log('No hay pacientes pendientes para llamar');
+      return;
+    }
+
+    // Mostrar en consola los datos del paciente que se va a llamar
+    console.log('Paciente a llamar:', ficha);
+
+    // Aquí más adelante se enviaría al backend
+    // this.http.post('http://localhost:3000/ficha/actualizar-estado', payload)
+  }
+
+  cancelarPaciente() {
+    const pendientes = this.fichas.filter((f) => f.EstadoFicha === 'En espera');
+    if (pendientes.length === 0) {
+      console.log('No hay pacientes pendientes para cancelar');
+      return;
+    }
+
+    pendientes.forEach((ficha) => {
+      ficha.colorEstado = 'rojo'; // Cambiar color en UI
+      console.log('Paciente cancelado:', ficha);
+
+      // Aquí más adelante se enviaría al backend
+      // this.http.post('http://localhost:3000/ficha/actualizar-estado', payload)
     });
   }
 }

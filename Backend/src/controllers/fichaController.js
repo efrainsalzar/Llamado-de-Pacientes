@@ -65,6 +65,7 @@ const obtenerFichasPublicasPorFecha = async (req, res) => {
 
     const [fichas] = await sequelize.query(`
       SELECT 
+          idFicha,
           Ficha,
           Periodo,
           CONVERT(date, Inicio) AS FechaInicio,
@@ -72,8 +73,9 @@ const obtenerFichasPublicasPorFecha = async (req, res) => {
           Ticket,
           paciente,
           Descripcion AS Especialidad,
-          medico
-      FROM dbo.vwFICHASPROGRAMADAS
+          medico,
+          EstadoFicha
+      FROM dbo.vwFICHASPROGRAMADASV2
       WHERE CONVERT(date, Inicio) = :fecha 
       AND Descripcion = :especialidad
       ORDER BY Horario;
@@ -110,6 +112,7 @@ const obtenerFichasPorMedico = async (req, res) => {
 
     const [fichas] = await sequelize.query(`
       SELECT 
+          idFicha,
           Ficha,
           Periodo,
           CONVERT(date, Inicio) AS FechaInicio,
@@ -117,12 +120,13 @@ const obtenerFichasPorMedico = async (req, res) => {
           Ticket,
           paciente,
           Descripcion AS Especialidad,
-          medico
-      FROM dbo.vwFICHASPROGRAMADAS
+          medico,
+          EstadoFicha
+      FROM dbo.vwFICHASPROGRAMADASV2
       WHERE Inicio >= :fecha
         AND Inicio < DATEADD(day, 1, :fecha)
         AND medico LIKE :medico
-      ORDER BY Horario;
+      ORDER BY Fecha, Horario;
     `, {
       replacements: { fecha, medico: `%${medico}%` }
     });

@@ -26,3 +26,16 @@ thead {
 tr:nth-child(even) {
   background-color: #fafafa;
 }
+.verde {
+  background-color: #4CAF50;
+  color: white;
+  font-weight: bold;
+  text-align: center;
+}
+
+.rojo {
+  background-color: #f44336;
+  color: white;
+  font-weight: bold;
+  text-align: center;
+}

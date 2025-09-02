@@ -39,3 +39,19 @@ ON UPDATE CASCADE;
 
 
 select * from tblESTADOFICHA
+
+
+
+
+-- quitar
+
+ALTER TABLE tblFICHAS
+DROP CONSTRAINT FK_Ficha_Estado;
+
+
+ALTER TABLE tblFICHAS
+DROP CONSTRAINT DF_Ficha_EstadoFicha;
+
+
+ALTER TABLE tblFICHAS
+DROP COLUMN estadoFicha;

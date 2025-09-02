@@ -46,6 +46,7 @@
       <td>{{ ficha.paciente }}</td>
       <td>{{ ficha.Especialidad }}</td>
       <td>{{ ficha.medico }}</td>
+      <td >{{ ficha.EstadoFicha }}</td>
     </tr>
   </tbody>
 </table>
@@ -53,3 +54,9 @@
 
   <p *ngIf="fichas.length === 0">No hay fichas para la fecha y especialidad seleccionadas.</p>
 </div>
+
+<div class="acciones-tabla">
+  <button (click)="cancelarPaciente()">Cancelar</button>
+  <button (click)="llamarSiguiente()">Llamar Siguiente Paciente</button>
+</div>
+
