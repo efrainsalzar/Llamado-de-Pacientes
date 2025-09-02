@@ -1,30 +1,55 @@
 <div class="contenedor">
-  <h2>Pacientes en Espera</h2>
+  <h1>Lista de Fichas  por Medico</h1>
 
-  <table>
-    <thead>
-      <tr>
-        <th>ID Ficha</th>
-        <th>ID Paciente</th>
-        <th>Consultorio</th>
-        <th>Estado</th>
-        <th>Fecha</th>
-        <th>Hora Registro</th>
-        <th>Hora Llamado</th>
-        <th>Hora Finalización</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr *ngFor="let u of usuarios">
-        <td>{{ u.id_ficha }}</td>
-        <td>{{ u.id_paciente }}</td>
-        <td>{{ u.consultorio }}</td>
-        <td>{{ u.estado }}</td>
-        <td>{{ u.fecha }}</td>
-        <td>{{ u.hora_registro  }}</td>
-        <td>{{ u.hora_llamado || '-' }}</td>
-        <td>{{ u.hora_finalizacion || '-' }}</td>
-      </tr>
-    </tbody>
-  </table>
+  <!-- Filtros -->
+  <div class="filtros">
+    <label>
+      Fecha:
+      <input type="date" [(ngModel)]="fechaSeleccionada">
+    </label>
+
+    <label>
+  Especialidad:
+  <select [(ngModel)]="medicoSeleccionado" (ngModelChange)="onMedicoChange($event)">
+    <option value="" disabled>Seleccione especialidad</option>
+    <option *ngFor="let esp of medicos" [value]="esp.Medico">
+      {{ esp.Medico }}
+    </option>
+  </select>
+</label>
+
+
+    <button (click)="cargarFichas()">Buscar</button>
+  </div>
+
+  <!-- Tabla -->
+  <table *ngIf="fichas.length > 0">
+  <thead>
+    <tr>
+      <th>N° Ficha</th>
+      <th>Ticket</th>
+      <th>Periodo</th>
+      <th>Fecha</th>
+      <th>Horario</th>
+      <th>Paciente</th>
+      <th>Especialidad</th>
+      <th>Médico</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr *ngFor="let ficha of fichas">
+      <td>{{ ficha.Ficha }}</td>
+      <td>{{ ficha.Ticket }}</td>
+      <td>{{ ficha.Periodo }}</td>
+      <td>{{ ficha.FechaInicio }}</td>
+      <td>{{ ficha.Horario }}</td>
+      <td>{{ ficha.paciente }}</td>
+      <td>{{ ficha.Especialidad }}</td>
+      <td>{{ ficha.medico }}</td>
+    </tr>
+  </tbody>
+</table>
+
+
+  <p *ngIf="fichas.length === 0">No hay fichas para la fecha y especialidad seleccionadas.</p>
 </div>
