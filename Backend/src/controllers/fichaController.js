@@ -78,7 +78,7 @@ const obtenerFichasPublicasPorFecha = async (req, res) => {
       FROM dbo.vwFICHASPROGRAMADASV2
       WHERE CONVERT(date, Inicio) = :fecha 
       AND Descripcion = :especialidad
-      ORDER BY Horario;
+      ORDER BY Periodo, Ficha;
     `, {
       replacements: { fecha, especialidad }
     });
@@ -126,7 +126,7 @@ const obtenerFichasPorMedico = async (req, res) => {
       WHERE Inicio >= :fecha
         AND Inicio < DATEADD(day, 1, :fecha)
         AND medico LIKE :medico
-      ORDER BY Fecha, Horario;
+      ORDER BY Periodo, Ficha;
     `, {
       replacements: { fecha, medico: `%${medico}%` }
     });
