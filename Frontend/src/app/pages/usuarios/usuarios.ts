@@ -13,21 +13,42 @@ import { io, Socket } from 'socket.io-client';
 })
 export class Usuarios implements OnInit {
   fichas: any[] = [];
-  medicos: any[] = []; // Lista de médicos
+  medicos: any[] = [];
+  turnos: any[]= [];
   medicoSeleccionado: string = ''; // Médico elegido
   fechaSeleccionada: string = ''; // Fecha elegida
+  turnoSeleccionado: string = '';
 
   private http = inject(HttpClient);
   private socket!: Socket;
 
   ngOnInit(): void {
-    this.cargarMedicos(); // Traer lista de médicos
+
     this.conectarSocket();
+  }
+  // Nuevo método que se llama al cambiar la fecha
+onFechaChange(valor: string) {
+  this.fechaSeleccionada = valor;
+  console.log('Fecha seleccionada:', valor);
+
+  if (!this.fechaSeleccionada) return;
+
+  this.cargarMedicos();
+  this.cargarturnos();
+}
+  // Conexión a Socket.IO
+  conectarSocket(): void {
+    this.socket = io('http://localhost:3000');
+    this.socket.on('fichasActualizadas', (data: any[]) => {
+      this.fichas = data;
+      console.log('Fichas actualizadas en tiempo real:', this.fichas);
+    });
   }
 
   // Traer lista de médicos desde backend
   cargarMedicos(): void {
-    this.http.get<any>('http://localhost:3000/medicos').subscribe({
+    this.http.get<any>(`http://localhost:3000/medicos/${this.fechaSeleccionada}`)
+    .subscribe({
       next: (res) => {
         this.medicos = res.data;
         console.log('Médicos:', this.medicos);
@@ -35,11 +56,26 @@ export class Usuarios implements OnInit {
       error: (err) => console.error('Error al cargar médicos:', err),
     });
   }
+    cargarturnos(): void {
+    this.http.get<any>(`http://localhost:3000/turnos/${this.fechaSeleccionada}`)
+    .subscribe({
+      next: (res) => {
+        this.turnos = res.data;
+        console.log('Turnos:', this.turnos);
+      },
+      error: (err) => console.error('Error al cargar turnos:', err),
+    });
+  }
 
   // Capturar cambio de médico seleccionado
   onMedicoChange(valor: string) {
     this.medicoSeleccionado = valor;
     console.log('Médico seleccionado:', valor);
+  }
+
+    onTurnoChange(valor: string) {
+    this.turnoSeleccionado = valor;
+    console.log('Turno seleccionado:', valor);
   }
 
   // Cargar usuarios filtrados por médico y fecha
@@ -51,40 +87,34 @@ export class Usuarios implements OnInit {
 
     console.log('Fecha:', this.fechaSeleccionada);
     console.log('Médico:', this.medicoSeleccionado);
+    console.log('Turno:', this.turnoSeleccionado);
+
 
     this.http
       .get<any>(`http://localhost:3000/medico/${this.fechaSeleccionada}/${this.medicoSeleccionado}`)
       .subscribe({
         next: (res) => {
           this.fichas = res.data;
-          console.log('Usuarios cargados:', this.fichas);
+          console.log('fichas:', this.fichas);
         },
-        error: (err) => console.error('Error al obtener usuarios:', err),
+        error: (err) => console.error('Error al obtener fichas:', err),
       });
   }
 
-  // Conexión a Socket.IO
-  conectarSocket(): void {
-    this.socket = io('http://localhost:3000');
-    this.socket.on('fichasActualizadas', (data: any[]) => {
-      this.fichas = data;
-      console.log('Fichas actualizadas en tiempo real:', this.fichas);
-    });
-  }
-
   llamarSiguiente() {
-    // Buscar la primera ficha pendiente
-    const ficha = this.fichas.find((f) => f.EstadoFicha === 'En espera');
-    if (!ficha) {
+    // Filtrar solo las fichas que estén "En espera"
+    const pendientes = this.fichas.filter((f) => f.EstadoFicha === 'En espera');
+
+    if (pendientes.length === 0) {
       console.log('No hay pacientes pendientes para llamar');
       return;
     }
+    // Buscar la ficha con el número más bajo
+    const siguiente = pendientes.reduce((min, f) => {
+      return f.Ficha < min.Ficha ? f : min;
+    }, pendientes[0]);
 
-    // Mostrar en consola los datos del paciente que se va a llamar
-    console.log('Paciente a llamar:', ficha);
-
-    // Aquí más adelante se enviaría al backend
-    // this.http.post('http://localhost:3000/ficha/actualizar-estado', payload)
+    console.log('Paciente a llamar:', siguiente);
   }
 
   cancelarPaciente() {
@@ -93,13 +123,6 @@ export class Usuarios implements OnInit {
       console.log('No hay pacientes pendientes para cancelar');
       return;
     }
-
-    pendientes.forEach((ficha) => {
-      ficha.colorEstado = 'rojo'; // Cambiar color en UI
-      console.log('Paciente cancelado:', ficha);
-
-      // Aquí más adelante se enviaría al backend
-      // this.http.post('http://localhost:3000/ficha/actualizar-estado', payload)
-    });
   }
+  Atendido() {}
 }

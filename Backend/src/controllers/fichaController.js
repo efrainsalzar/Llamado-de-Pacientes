@@ -37,8 +37,9 @@ const getMedico = async (req, res) => {
 
     const [fichas] = await sequelize.query(`
       SELECT DISTINCT
-          medico AS Medico
-      FROM dbo.vwFICHASPROGRAMADAS;
+        medico AS Medico
+    FROM dbo.vwFICHASPROGRAMADAS
+    WHERE CONVERT(date, Inicio) = :fecha
     `, {
       replacements: { fecha }
     });
@@ -52,6 +53,33 @@ const getMedico = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Error al obtener Espec",
+      error: error.message
+    });
+  }
+};
+
+const getTurno = async (req, res) => {
+  try {
+    const { fecha } = req.params; 
+
+    const [fichas] = await sequelize.query(`
+      SELECT DISTINCT
+        Periodo AS Turno
+    FROM dbo.vwFICHASPROGRAMADAS
+    WHERE CONVERT(date, Inicio) = :fecha
+    `, {
+      replacements: { fecha }
+    });
+
+    res.status(200).json({
+      success: true,
+      data: fichas
+    });
+  } catch (error) {
+    console.error("[ERROR getTurnos]", error.message);
+    res.status(500).json({
+      success: false,
+      message: "Error al obtener turnos",
       error: error.message
     });
   }
@@ -153,4 +181,5 @@ module.exports = {
   obtenerFichasPublicasPorFecha,
   obtenerFichasPorMedico,
   getMedico
+  ,getTurno
 };
