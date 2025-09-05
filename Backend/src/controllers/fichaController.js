@@ -143,7 +143,7 @@ const obtenerFichasPorMedico = async (req, res) => {
           idFicha,
           Ficha,
           Periodo,
-          CONVERT(date, Inicio) AS FechaInicio,
+          CONVERT(varchar(10), Inicio, 23) AS FechaInicio,  --por la zona horaria
           Horario,
           Ticket,
           paciente,
@@ -151,8 +151,7 @@ const obtenerFichasPorMedico = async (req, res) => {
           medico,
           EstadoFicha
       FROM dbo.vwFICHASPROGRAMADASV2
-      WHERE Inicio >= :fecha
-        AND Inicio < DATEADD(day, 1, :fecha)
+      WHERE CONVERT(date, Inicio) = :fecha
         AND medico LIKE :medico
       ORDER BY Periodo, Ficha;
     `, {
