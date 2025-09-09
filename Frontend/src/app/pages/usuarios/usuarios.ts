@@ -15,9 +15,9 @@ export class Usuarios implements OnInit {
   fichas: any[] = [];
   medicos: any[] = [];
   turnos: any[] = [];
-  medicoSeleccionado: string = ''; // Médico elegido
-  fechaSeleccionada: string = ''; // Fecha elegida
-  turnoSeleccionado: string = '';
+  medicoSeleccionado = '';
+  fechaSeleccionada = '';
+  turnoSeleccionado = '';
 
   private http = inject(HttpClient);
   private socket!: Socket;
@@ -25,17 +25,8 @@ export class Usuarios implements OnInit {
   ngOnInit(): void {
     this.conectarSocket();
   }
-  // Nuevo método que se llama al cambiar la fecha
-  onFechaChange(valor: string) {
-    this.fechaSeleccionada = valor;
-    console.log('Fecha seleccionada:', valor);
 
-    if (!this.fechaSeleccionada) return;
-
-    this.cargarMedicos();
-    this.cargarturnos();
-  }
-  // Conexión a Socket.IO
+  // ============ SOCKET.IO ============
   conectarSocket(): void {
     this.socket = io('http://localhost:3000');
     this.socket.on('fichasActualizadas', (data: any[]) => {
@@ -44,203 +35,114 @@ export class Usuarios implements OnInit {
     });
   }
 
-  // Traer lista de médicos desde backend
-  cargarMedicos(): void {
-    this.http.get<any>(`http://localhost:3000/medicos/${this.fechaSeleccionada}`).subscribe({
-      next: (res) => {
-        this.medicos = res.data;
-        console.log('Médicos:', this.medicos);
-      },
-      error: (err) => console.error('Error al cargar médicos:', err),
-    });
-  }
-  cargarturnos(): void {
-    this.http.get<any>(`http://localhost:3000/turnos/${this.fechaSeleccionada}`).subscribe({
-      next: (res) => {
-        this.turnos = res.data;
-        console.log('Turnos:', this.turnos);
-      },
-      error: (err) => console.error('Error al cargar turnos:', err),
-    });
+  // ============ EVENTOS ============
+  onFechaChange(valor: string) {
+    this.fechaSeleccionada = valor;
+    if (!this.fechaSeleccionada) return;
+    this.cargarMedicos();
+    this.cargarTurnos();
   }
 
-  // Capturar cambio de médico seleccionado
   onMedicoChange(valor: string) {
     this.medicoSeleccionado = valor;
-    console.log('Médico seleccionado:', valor);
   }
 
   onTurnoChange(valor: string) {
     this.turnoSeleccionado = valor;
-    console.log('Turno seleccionado:', valor);
   }
 
-  // Cargar usuarios filtrados por médico y fecha
+  // ============ CARGAS DE DATOS ============
+  cargarMedicos(): void {
+    this.http.get<any>(`http://localhost:3000/medicos/${this.fechaSeleccionada}`).subscribe({
+      next: (res) => (this.medicos = res.data),
+      error: (err) => console.error('Error al cargar médicos:', err),
+    });
+  }
+
+  cargarTurnos(): void {
+    this.http.get<any>(`http://localhost:3000/turnos/${this.fechaSeleccionada}`).subscribe({
+      next: (res) => (this.turnos = res.data),
+      error: (err) => console.error('Error al cargar turnos:', err),
+    });
+  }
+
   cargarFichas(): void {
     if (!this.fechaSeleccionada || !this.medicoSeleccionado) {
       alert('Seleccione fecha y médico');
       return;
     }
 
-    console.log('Fecha:', this.fechaSeleccionada);
-    console.log('Médico:', this.medicoSeleccionado);
-    console.log('Turno:', this.turnoSeleccionado);
+    const url = this.turnoSeleccionado
+      ? `http://localhost:3000/medicoPeriodo/${this.fechaSeleccionada}/${this.medicoSeleccionado}/${this.turnoSeleccionado}`
+      : `http://localhost:3000/medico/${this.fechaSeleccionada}/${this.medicoSeleccionado}`;
 
+    this.http.get<any>(url).subscribe({
+      next: (res) => (this.fichas = res.data),
+      error: (err) => console.error('Error al obtener fichas:', err),
+    });
+  }
+
+  // ============ GESTIÓN DE ESTADOS ============
+  private actualizarEstadoFicha(ficha: any, nuevoEstado: number, estadoTexto: string) {
     this.http
-      .get<any>(`http://localhost:3000/medico/${this.fechaSeleccionada}/${this.medicoSeleccionado}`)
+      .put(`http://localhost:3000/actualizarEstadoFicha/${ficha.idFicha}`, { estado: nuevoEstado })
       .subscribe({
-        next: (res) => {
-          this.fichas = res.data;
-          console.log('fichas:', this.fichas);
+        next: () => {
+          console.log(`Ficha ${ficha.idFicha} → ${estadoTexto}`);
+          ficha.EstadoFicha = estadoTexto;
         },
-        error: (err) => console.error('Error al obtener fichas:', err),
+        error: (err) => console.error(`Error al actualizar ficha ${ficha.idFicha}`, err),
       });
   }
-  cargarFichasPorTurno() : void{
-    if (!this.fechaSeleccionada || !this.medicoSeleccionado || !this.turnoSeleccionado) {
-      alert('Seleccione fecha, médico y turno');
-      return;
-    }
 
-    console.log('Fecha:', this.fechaSeleccionada);
-    console.log('Médico:', this.medicoSeleccionado);
-    console.log('Turno:', this.turnoSeleccionado);
+  private obtenerSiguiente(permitidos: string[]): any | null {
+    const pendientes = this.fichas.filter((f) => permitidos.includes(f.EstadoFicha));
+    if (pendientes.length === 0) return null;
+    return pendientes.reduce((min, f) => (f.Ficha < min.Ficha ? f : min), pendientes[0]);
+  }
 
-    this.http
-      .get<any>(`http://localhost:3000/medicoPeriodo/${this.fechaSeleccionada}/${this.medicoSeleccionado}/${this.turnoSeleccionado}`)
-      .subscribe({
-        next: (res) => {
-          this.fichas = res.data;
-          console.log('fichas:', this.fichas);
-        },
-        error: (err) => console.error('Error al obtener fichas:', err),
-      });
-  };
-
+  // Controladores de botones
   llamarSiguiente() {
-    // Filtrar solo las fichas que estén "En espera"
-    const pendientes = this.fichas.filter((f) => f.EstadoFicha === 'En espera');
+    const ficha = this.obtenerSiguiente(['En espera']);
+    if (!ficha) return console.log('No hay pacientes pendientes para llamar');
+    this.actualizarEstadoFicha(ficha, 2, 'Llamado');
+  }
 
-    if (pendientes.length === 0) {
-      console.log('No hay pacientes pendientes para llamar');
-      return;
-    }
-    // Buscar la ficha con el número más bajo
-    const siguiente = pendientes.reduce((min, f) => {
-      return f.Ficha < min.Ficha ? f : min;
-    }, pendientes[0]);
-
-    console.log('Paciente a llamar:', siguiente);
-
-    // Llamar API para actualizar estado
-    this.http
-      .put(`http://localhost:3000/actualizarEstadoFicha/${siguiente.idFicha}`, {
-        estado: 2,
-      })
-      .subscribe({
-        next: (res) => {
-          console.log('Estado actualizado:', res);
-          // Opcional: refrescar lista o actualizar el estado local
-          siguiente.EstadoFicha = 'Llamado';
-        },
-        error: (err) => {
-          console.error('Error al actualizar estado', err);
-        },
-      });
+  atenderPaciente() {
+    const ficha = this.obtenerSiguiente(['Llamado']);
+    if (!ficha) return console.log('No hay pacientes pendientes para atender');
+    this.actualizarEstadoFicha(ficha, 3, 'Atendido');
   }
 
   cancelarPaciente() {
-    const pendientes = this.fichas.filter(
-      (f) => f.EstadoFicha === 'En espera' || f.EstadoFicha === 'Llamado');
-    if (pendientes.length === 0) {
-      console.log('No hay pacientes pendientes para cancelar');
-      return;
-    }
-
-
-    // Buscar la ficha con el número más bajo
-    const siguiente = pendientes.reduce((min, f) => {
-      return f.Ficha < min.Ficha ? f : min;
-    }, pendientes[0]);
-
-
-    console.log('Paciente cancelado: ', siguiente);
-
-    this.http
-      .put(`http://localhost:3000/actualizarEstadoFicha/${siguiente.idFicha}`, {
-        estado: 4,
-      })
-      .subscribe({
-        next: (res) => {
-          console.log('Estado actualizado:', res);
-          // Opcional: refrescar lista o actualizar el estado local
-          siguiente.EstadoFicha = 'Cancelado';
-        },
-        error: (err) => {
-          console.error('Error al actualizar estado', err);
-        },
-      });
+    const ficha = this.obtenerSiguiente(['En espera', 'Llamado']);
+    if (!ficha) return console.log('No hay pacientes pendientes para cancelar');
+    this.actualizarEstadoFicha(ficha, 4, 'Cancelado');
   }
 
-  Atendido() {
-    // Filtrar solo las fichas que estén "En espera"
-    const pendientes = this.fichas.filter((f) => f.EstadoFicha === 'Llamado');
-
-    if (pendientes.length === 0) {
-      console.log('No hay pacientes pendientes para llamados');
-      return;
-    }
-    // Buscar la ficha con el número más bajo
-    const siguiente = pendientes.reduce((min, f) => {
-      return f.Ficha < min.Ficha ? f : min;
-    }, pendientes[0]);
-
-    console.log('Paciente a llamar:', siguiente);
-
-    // Llamar API para actualizar estado
-    this.http
-      .put(`http://localhost:3000/actualizarEstadoFicha/${siguiente.idFicha}`, {
-        estado: 3,
-      })
-      .subscribe({
-        next: (res) => {
-          console.log('Estado actualizado:', res);
-          // Opcional: refrescar lista o actualizar el estado local
-          siguiente.EstadoFicha = 'Atendido';
-        },
-        error: (err) => {
-          console.error('Error al actualizar estado', err);
-        },
-      });
-  }
-
-  ReinicarEstado() {
-    // Filtrar solo las fichas que estén "Llamado" o "Atendido"
-    const pendientes = this.fichas.filter(
-      (f) => f.EstadoFicha === 'Llamado' || f.EstadoFicha === 'Atendido' || f.EstadoFicha === 'Cancelado'
+  reiniciarEstado() {
+    const pendientes = this.fichas.filter((f) =>
+      ['Llamado', 'Atendido', 'Cancelado'].includes(f.EstadoFicha)
     );
+    if (pendientes.length === 0) return console.log('No hay pacientes para reiniciar estado');
 
-    if (pendientes.length === 0) {
-      console.log('No hay pacientes pendientes para reiniciar estado');
-      return;
-    }
+    pendientes.forEach((ficha) => this.actualizarEstadoFicha(ficha, 1, 'En espera'));
+  }
 
-    console.log('Pacientes a reiniciar estado:', pendientes);
+  // ============ GETTERS PARA BOTONES ============
+  get puedeLlamar(): boolean {
+    return this.obtenerSiguiente(['En espera']) !== null;
+  }
 
-    // Recorrer todos los pacientes pendientes y actualizar su estado
-    pendientes.forEach((ficha) => {
-      this.http
-        .put(`http://localhost:3000/actualizarEstadoFicha/${ficha.idFicha}`, {
-          estado: 1,
-        })
-        .subscribe({
-          next: (res) => {
-            console.log(`Estado actualizado para ficha ${ficha.idFicha}:`, res);
-          },
-          error: (err) => {
-            console.error(`Error al actualizar ficha ${ficha.idFicha}`, err);
-          },
-        });
-    });
+  get puedeAtender(): boolean {
+    return this.obtenerSiguiente(['Llamado']) !== null;
+  }
+
+  get puedeCancelar(): boolean {
+    return this.obtenerSiguiente(['En espera', 'Llamado']) !== null;
+  }
+
+  get puedeReiniciar(): boolean {
+    return this.fichas.some((f) => ['Llamado', 'Atendido', 'Cancelado'].includes(f.EstadoFicha));
   }
 }

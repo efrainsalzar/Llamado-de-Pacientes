@@ -1,37 +1,46 @@
 <div class="contenedor">
-  <h1>Lista de Fichas por Medico</h1>
+  <h1>Lista de Fichas por Médico</h1>
 
   <!-- Filtros -->
   <div class="filtros">
-<label>
-  Fecha:
-  <input type="date" [(ngModel)]="fechaSeleccionada" (ngModelChange)="onFechaChange($event)">
-</label>
+    <label>
+      Fecha:
+      <input
+        type="date"
+        [(ngModel)]="fechaSeleccionada"
+        (ngModelChange)="onFechaChange($event)"
+      />
+    </label>
 
     <label>
-      Medico:
-      <select [(ngModel)]="medicoSeleccionado" (ngModelChange)="onMedicoChange($event)">
-        <option value="" disabled>Seleccione medico</option>
-        <option *ngFor="let esp of medicos" [value]="esp.Medico">
-          {{ esp.Medico }}
+      Médico:
+      <select
+        [(ngModel)]="medicoSeleccionado"
+        (ngModelChange)="onMedicoChange($event)"
+      >
+        <option value="" disabled selected>Seleccione médico</option>
+        <option *ngFor="let medico of medicos" [value]="medico.Medico">
+          {{ medico.Medico }}
         </option>
       </select>
     </label>
 
-        <label>
-      turno:
-      <select [(ngModel)]="turnoSeleccionado" (ngModelChange)="onTurnoChange($event)">
-        <option value="" disabled>Seleccione turno</option>
-        <option *ngFor="let esp of turnos" [value]="esp.Turno">
-          {{ esp.Turno }}
+    <label>
+      Turno:
+      <select
+        [(ngModel)]="turnoSeleccionado"
+        (ngModelChange)="onTurnoChange($event)"
+      >
+        <option value="" disabled selected>Seleccione turno</option>
+        <option *ngFor="let turno of turnos" [value]="turno.Turno">
+          {{ turno.Turno }}
         </option>
       </select>
     </label>
-    <br>
-    <br>
-    <button (click)="cargarFichas()">Buscar Todas Las fichas</button>
-    <br>
-    <button (click)="cargarFichasPorTurno()">Buscar Fichas por Turno</button>
+
+    <div class="acciones-filtros">
+      <button (click)="cargarFichas()">Buscar todas las fichas</button>
+    </div>
   </div>
 
   <!-- Tabla -->
@@ -51,7 +60,6 @@
         <td>{{ ficha.Ficha }}</td>
         <td>{{ ficha.Ticket }}</td>
         <td>{{ ficha.Periodo }}</td>
-
         <td>{{ ficha.paciente }}</td>
         <td>{{ ficha.Especialidad }}</td>
         <td>{{ ficha.EstadoFicha }}</td>
@@ -59,12 +67,15 @@
     </tbody>
   </table>
 
-  <p *ngIf="fichas.length === 0">No hay fichas para la fecha y especialidad seleccionadas.</p>
+  <p *ngIf="fichas.length === 0">
+    No hay fichas para la fecha, médico o turno seleccionados.
+  </p>
 </div>
 
+<!-- Acciones tabla -->
 <div class="acciones-tabla">
   <button (click)="cancelarPaciente()">Cancelar Ficha</button>
   <button (click)="llamarSiguiente()">Llamar Ficha</button>
-  <button (click)="Atendido()">Ficha Atendida</button>
-  <button (click)="ReinicarEstado()">reiniciar atencion</button>
+  <button (click)="atenderPaciente()">Ficha Atendida</button>
+  <button (click)="reiniciarEstado()">Reiniciar Atención</button>
 </div>
