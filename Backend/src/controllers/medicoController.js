@@ -1,122 +1,160 @@
 const sequelize = require("../config/db");
 
-// ======= SERVICIOS =======
+// ======= UTILIDADES =======
 
 /**
  * Buscar ficha por ID
- * @param {number|string} idFicha
- * @returns {Promise<object|null>} Ficha encontrada o null
  */
 const findFichaById = async (idFicha) => {
   const [result] = await sequelize.query(
     `SELECT * FROM dbo.tblFICHAS WHERE IDFicha = :idFicha`,
     { replacements: { idFicha } }
   );
-  return result.length > 0 ? result[0] : null;
+  return result[0] || null;
+};
+
+/**
+ * Validar estado permitido
+ */
+const validarEstado = (estado) => {
+  const estadosPermitidos = {
+    1: "en espera",
+    2: "llamado",
+    3: "atendido",
+    4: "cancelado",
+  };
+  return estadosPermitidos[estado] ? estadosPermitidos[estado] : null;
+};
+
+/**
+ * Ejecutar consulta genérica para fichas por médico, fecha y opcional periodo
+ */
+const getFichas = async ({ medico, fecha, periodo }) => {
+  let query = `
+    SELECT 
+        idFicha,
+        Ficha,
+        Periodo,
+        CONVERT(varchar(10), Inicio, 23) AS FechaInicio,
+        Horario,
+        Ticket,
+        paciente,
+        Descripcion AS Especialidad,
+        medico,
+        EstadoFicha
+    FROM dbo.vwFICHASPROGRAMADASV2
+    WHERE CONVERT(date, Inicio) = :fecha
+      AND medico LIKE :medico
+  `;
+  const replacements = { fecha, medico: `%${medico}%` };
+
+  if (periodo) {
+    query += ` AND Periodo = :periodo`;
+    replacements.periodo = periodo;
+  }
+
+  query += ` ORDER BY ${periodo ? "idFicha" : "Periodo, idFicha"}`;
+
+  const [fichas] = await sequelize.query(query, { replacements });
+  return fichas;
 };
 
 // ======= CONTROLADORES =======
 
-/**
- * Buscar ficha por ID (endpoint)
- */
 const BuscarIdFicha = async (req, res) => {
   try {
     const { idFicha } = req.params;
-
-    if (!idFicha) {
-      return res.status(400).json({
-        success: false,
-        message: "Falta el parámetro: idFicha es obligatorio",
-      });
-    }
+    if (!idFicha) return res.status(400).json({ success: false, message: "Falta el parámetro: idFicha" });
 
     const ficha = await findFichaById(idFicha);
+    if (!ficha) return res.status(404).json({ success: false, message: `No se encontró ficha con ID ${idFicha}` });
 
-    if (!ficha) {
-      return res.status(404).json({
-        success: false,
-        message: `No se encontró ficha con ID ${idFicha}`,
-      });
-    }
-
-    res.status(200).json({
-      success: true,
-      data: ficha,
-    });
+    res.json({ success: true, data: ficha });
   } catch (error) {
     console.error("[ERROR BuscarIdFicha]", error);
-    res.status(500).json({
-      success: false,
-      message: "Error al obtener ficha por ID",
-      error: error.message,
-    });
+    res.status(500).json({ success: false, message: "Error al obtener ficha por ID", error: error.message });
   }
 };
 
-/**
- * Actualizar estado de ficha
- */
 const actualizarEstadoFicha = async (req, res) => {
   try {
     const { idFicha } = req.params;
-    const { estado } = req.body; // Se pasa en el body para mayor flexibilidad
+    const { estado } = req.body;
 
-    if (!idFicha || !estado) {
-      return res.status(400).json({
-        success: false,
-        message: "Parámetros requeridos: idFicha y estado",
-      });
-    }
+    if (!idFicha || !estado) return res.status(400).json({ success: false, message: "Parámetros requeridos: idFicha y estado" });
 
-    // Validar que el estado sea permitido
-    const estadosPermitidos = {
-      2: "llamado",
-      3: "atendido",
-      4: "cancelado",
-    };
+    const estadoNombre = validarEstado(estado);
+    if (!estadoNombre) return res.status(400).json({
+      success: false,
+      message: `Estado inválido. Valores permitidos: ${Object.keys({1:1,2:2,3:3,4:4}).join(", ")}`
+    });
 
-    if (!estadosPermitidos[estado]) {
-      return res.status(400).json({
-        success: false,
-        message: `Estado inválido. Valores permitidos: ${Object.keys(estadosPermitidos).join(", ")}`,
-      });
-    }
-
-    // Verificar existencia de ficha
     const ficha = await findFichaById(idFicha);
-    if (!ficha) {
-      return res.status(404).json({
-        success: false,
-        message: `No se encontró ficha con ID ${idFicha}`,
-      });
-    }
+    if (!ficha) return res.status(404).json({ success: false, message: `No se encontró ficha con ID ${idFicha}` });
 
-    // Actualizar estado
     await sequelize.query(
-      `UPDATE dbo.tblFICHAS
-       SET EstadoFicha = :estado
-       WHERE IDFicha = :idFicha`,
+      `UPDATE dbo.tblFICHAS SET EstadoFicha = :estado WHERE IDFicha = :idFicha`,
       { replacements: { idFicha, estado } }
     );
 
-    res.status(200).json({
-      success: true,
-      message: `Estado de ficha actualizado a '${estadosPermitidos[estado]}'`,
-      data: { ...ficha, EstadoFicha: estado },
-    });
-
+    res.json({ success: true, message: `Estado actualizado a '${estadoNombre}'`, data: { ...ficha, EstadoFicha: estado } });
   } catch (error) {
     console.error("[ERROR actualizarEstadoFicha]", error);
-    res.status(500).json({
-      success: false,
-      message: "Error al actualizar estado de la ficha",
-      error: error.message,
-    });
+    res.status(500).json({ success: false, message: "Error al actualizar estado de la ficha", error: error.message });
+  }
+};
+
+// Consultas simples de valores únicos (medico, turno)
+const getValoresUnicos = async (req, res, campo, mensajeError) => {
+  try {
+    const { fecha } = req.params;
+    const [result] = await sequelize.query(`
+      SELECT DISTINCT ${campo} 
+      FROM dbo.vwFICHASPROGRAMADAS
+      WHERE CONVERT(date, Inicio) = :fecha
+    `, { replacements: { fecha } });
+
+    res.json({ success: true, data: result });
+  } catch (error) {
+    console.error(`[ERROR ${mensajeError}]`, error.message);
+    res.status(500).json({ success: false, message: `Error al obtener ${mensajeError}`, error: error.message });
+  }
+};
+
+const getMedico = (req, res) => getValoresUnicos(req, res, "medico AS Medico", "medicos");
+const getTurno = (req, res) => getValoresUnicos(req, res, "Periodo AS Turno", "turnos");
+
+const obtenerFichasPorMedico = async (req, res) => {
+  try {
+    const { medico, fecha } = req.params;
+    if (!medico || !fecha) return res.status(400).json({ success: false, message: "Faltan parámetros: medico o fecha" });
+
+    const fichas = await getFichas({ medico, fecha });
+    res.json({ success: true, data: fichas });
+  } catch (error) {
+    console.error("[ERROR fichas por medicos]", error.message);
+    res.status(500).json({ success: false, message: "Error al obtener fichas del médico", error: error.message });
+  }
+};
+
+const obtenerFichasPorMedicoPeriodo = async (req, res) => {
+  try {
+    const { medico, fecha, periodo } = req.params;
+    if (!medico || !fecha) return res.status(400).json({ success: false, message: "Faltan parámetros: medico o fecha" });
+
+    const fichas = await getFichas({ medico, fecha, periodo });
+    res.json({ success: true, data: fichas });
+  } catch (error) {
+    console.error("[ERROR fichas por medicos periodo]", error.message);
+    res.status(500).json({ success: false, message: "Error al obtener fichas del médico", error: error.message });
   }
 };
 
 module.exports = {
   BuscarIdFicha,
-  actualizarEstadoFicha
+  actualizarEstadoFicha,
+  getMedico,
+  getTurno,
+  obtenerFichasPorMedico,
+  obtenerFichasPorMedicoPeriodo,
 };

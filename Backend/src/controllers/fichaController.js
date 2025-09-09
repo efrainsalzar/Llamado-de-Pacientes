@@ -12,7 +12,8 @@ const getEspecialidad = async (req, res) => {
     const [fichas] = await sequelize.query(`
       SELECT DISTINCT
           Descripcion AS Especialidad
-      FROM dbo.vwFICHASPROGRAMADAS;
+      FROM dbo.vwFICHASPROGRAMADAS
+      WHERE CONVERT(date, Inicio) = :fecha;
     `, {
       replacements: { fecha }
     });
@@ -22,75 +23,32 @@ const getEspecialidad = async (req, res) => {
       data: fichas
     });
   } catch (error) {
-    console.error("[ERROR getEspecialidades]", error.message);
+    console.error("[ERROR getEspecialidades] Mensaje:", error.message);
+
+    // Mostrar el objeto completo del error
+    console.error("[ERROR completo]", error);
+
+    // Si viene info adicional en original / parent (propio de mssql o tedious)
+    if (error.original) {
+      console.error("[ERROR original]", error.original);
+    }
+    if (error.parent) {
+      console.error("[ERROR parent]", error.parent);
+    }
+
     res.status(500).json({
       success: false,
       message: "Error al obtener Espec",
-      error: error.message
+      error: error.message,
+      detalle: error.original ? error.original.message : null
     });
   }
 };
-
-const getMedico = async (req, res) => {
-  try {
-    const { fecha } = req.params; 
-
-    const [fichas] = await sequelize.query(`
-      SELECT DISTINCT
-        medico AS Medico
-    FROM dbo.vwFICHASPROGRAMADAS
-    WHERE CONVERT(date, Inicio) = :fecha
-    `, {
-      replacements: { fecha }
-    });
-
-    res.status(200).json({
-      success: true,
-      data: fichas
-    });
-  } catch (error) {
-    console.error("[ERROR getEspecialidades]", error.message);
-    res.status(500).json({
-      success: false,
-      message: "Error al obtener Espec",
-      error: error.message
-    });
-  }
-};
-
-const getTurno = async (req, res) => {
-  try {
-    const { fecha } = req.params; 
-
-    const [fichas] = await sequelize.query(`
-      SELECT DISTINCT
-        Periodo AS Turno
-    FROM dbo.vwFICHASPROGRAMADAS
-    WHERE CONVERT(date, Inicio) = :fecha
-    `, {
-      replacements: { fecha }
-    });
-
-    res.status(200).json({
-      success: true,
-      data: fichas
-    });
-  } catch (error) {
-    console.error("[ERROR getTurnos]", error.message);
-    res.status(500).json({
-      success: false,
-      message: "Error al obtener turnos",
-      error: error.message
-    });
-  }
-};
-
 
 
 const obtenerFichasPublicasPorFecha = async (req, res) => {
   try {
     const { especialidad ,fecha } = req.params; 
-
     const [fichas] = await sequelize.query(`
       SELECT 
           idFicha,
@@ -125,60 +83,8 @@ const obtenerFichasPublicasPorFecha = async (req, res) => {
   }
 };
 
-const obtenerFichasPorMedico = async (req, res) => {
-  try {
-    const { medico, fecha } = req.params;
-
-    if (!medico || !fecha) {
-      return res.status(400).json({
-        success: false,
-        message: "Faltan parámetros: medico o fecha"
-      });
-    }
-
-    //console.log(`Buscando fichas para el médico: ${medico} en la fecha: ${fecha}`);
-
-    const [fichas] = await sequelize.query(`
-      SELECT 
-          idFicha,
-          Ficha,
-          Periodo,
-          CONVERT(varchar(10), Inicio, 23) AS FechaInicio,  --por la zona horaria
-          Horario,
-          Ticket,
-          paciente,
-          Descripcion AS Especialidad,
-          medico,
-          EstadoFicha
-      FROM dbo.vwFICHASPROGRAMADASV2
-      WHERE CONVERT(date, Inicio) = :fecha
-        AND medico LIKE :medico
-      ORDER BY Periodo, Ficha;
-    `, {
-      replacements: { fecha, medico: `%${medico}%` }
-    });
-
-    res.status(200).json({
-      success: true,
-      data: fichas
-    });
-
-  } catch (error) {
-    console.error("[ERROR fichas por medicos]", error.message);
-    res.status(500).json({
-      success: false,
-      message: "Error al obtener fichas del médico",
-      error: error.message
-    });
-  }
-};
-
-
 
 module.exports = {
   getEspecialidad,
   obtenerFichasPublicasPorFecha,
-  obtenerFichasPorMedico,
-  getMedico
-  ,getTurno
 };

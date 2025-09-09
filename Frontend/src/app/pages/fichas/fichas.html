@@ -5,7 +5,7 @@
   <div class="filtros">
     <label>
       Fecha:
-      <input type="date" [(ngModel)]="fechaSeleccionada">
+      <input type="date" [(ngModel)]="fechaSeleccionada" (ngModelChange)="onFechaChange($event)">
     </label>
 
     <label>

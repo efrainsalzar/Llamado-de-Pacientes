@@ -21,13 +21,23 @@ export class Fichas implements OnInit {
   private socket!: Socket;
 
   ngOnInit(): void {
-    this.cargarEspecialidades();
+
     this.conectarSocket();
+  }
+
+    // Nuevo método que se llama al cambiar la fecha
+  onFechaChange(valor: string) {
+    this.fechaSeleccionada = valor;
+    console.log('Fecha seleccionada:', valor);
+
+    if (!this.fechaSeleccionada) return;
+
+    this.cargarEspecialidades();
   }
 
   // Traer lista de especialidades desde backend
   cargarEspecialidades(): void {
-    this.http.get<any>('http://localhost:3000/especialidades')
+    this.http.get<any>(`http://localhost:3000/especialidades/${this.fechaSeleccionada}`)
       .subscribe({
         next: (res) => {
           this.especialidades = res.data;

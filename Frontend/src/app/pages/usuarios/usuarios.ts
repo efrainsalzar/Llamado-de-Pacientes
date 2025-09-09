@@ -96,6 +96,26 @@ export class Usuarios implements OnInit {
         error: (err) => console.error('Error al obtener fichas:', err),
       });
   }
+  cargarFichasPorTurno() : void{
+    if (!this.fechaSeleccionada || !this.medicoSeleccionado || !this.turnoSeleccionado) {
+      alert('Seleccione fecha, médico y turno');
+      return;
+    }
+
+    console.log('Fecha:', this.fechaSeleccionada);
+    console.log('Médico:', this.medicoSeleccionado);
+    console.log('Turno:', this.turnoSeleccionado);
+
+    this.http
+      .get<any>(`http://localhost:3000/medicoPeriodo/${this.fechaSeleccionada}/${this.medicoSeleccionado}/${this.turnoSeleccionado}`)
+      .subscribe({
+        next: (res) => {
+          this.fichas = res.data;
+          console.log('fichas:', this.fichas);
+        },
+        error: (err) => console.error('Error al obtener fichas:', err),
+      });
+  };
 
   llamarSiguiente() {
     // Filtrar solo las fichas que estén "En espera"
@@ -130,12 +150,38 @@ export class Usuarios implements OnInit {
   }
 
   cancelarPaciente() {
-    const pendientes = this.fichas.filter((f) => f.EstadoFicha === 'En espera');
+    const pendientes = this.fichas.filter(
+      (f) => f.EstadoFicha === 'En espera' || f.EstadoFicha === 'Llamado');
     if (pendientes.length === 0) {
       console.log('No hay pacientes pendientes para cancelar');
       return;
     }
+
+
+    // Buscar la ficha con el número más bajo
+    const siguiente = pendientes.reduce((min, f) => {
+      return f.Ficha < min.Ficha ? f : min;
+    }, pendientes[0]);
+
+
+    console.log('Paciente cancelado: ', siguiente);
+
+    this.http
+      .put(`http://localhost:3000/actualizarEstadoFicha/${siguiente.idFicha}`, {
+        estado: 4,
+      })
+      .subscribe({
+        next: (res) => {
+          console.log('Estado actualizado:', res);
+          // Opcional: refrescar lista o actualizar el estado local
+          siguiente.EstadoFicha = 'Cancelado';
+        },
+        error: (err) => {
+          console.error('Error al actualizar estado', err);
+        },
+      });
   }
+
   Atendido() {
     // Filtrar solo las fichas que estén "En espera"
     const pendientes = this.fichas.filter((f) => f.EstadoFicha === 'Llamado');
@@ -169,34 +215,32 @@ export class Usuarios implements OnInit {
   }
 
   ReinicarEstado() {
-    // Filtrar solo las fichas que estén "En espera"
-    const pendientes = this.fichas.filter((f) => f.EstadoFicha === 'Llamado');
+    // Filtrar solo las fichas que estén "Llamado" o "Atendido"
+    const pendientes = this.fichas.filter(
+      (f) => f.EstadoFicha === 'Llamado' || f.EstadoFicha === 'Atendido' || f.EstadoFicha === 'Cancelado'
+    );
 
     if (pendientes.length === 0) {
-      console.log('No hay pacientes pendientes para llamados');
+      console.log('No hay pacientes pendientes para reiniciar estado');
       return;
     }
-    // Buscar la ficha con el número más bajo
-    const siguiente = pendientes.reduce((min, f) => {
-      return f.Ficha < min.Ficha ? f : min;
-    }, pendientes[0]);
 
-    console.log('Paciente a llamar:', siguiente);
+    console.log('Pacientes a reiniciar estado:', pendientes);
 
-    // Llamar API para actualizar estado
-    this.http
-      .put(`http://localhost:3000/actualizarEstadoFicha/${siguiente.idFicha}`, {
-        estado: 1,
-      })
-      .subscribe({
-        next: (res) => {
-          console.log('Estado actualizado:', res);
-          // Opcional: refrescar lista o actualizar el estado local
-          siguiente.EstadoFicha = 'Atendido';
-        },
-        error: (err) => {
-          console.error('Error al actualizar estado', err);
-        },
-      });
+    // Recorrer todos los pacientes pendientes y actualizar su estado
+    pendientes.forEach((ficha) => {
+      this.http
+        .put(`http://localhost:3000/actualizarEstadoFicha/${ficha.idFicha}`, {
+          estado: 1,
+        })
+        .subscribe({
+          next: (res) => {
+            console.log(`Estado actualizado para ficha ${ficha.idFicha}:`, res);
+          },
+          error: (err) => {
+            console.error(`Error al actualizar ficha ${ficha.idFicha}`, err);
+          },
+        });
+    });
   }
 }
