@@ -1,4 +1,5 @@
 const sequelize = require("../config/db");
+const { getIO } = require("../config/socket");
 
 // ======= UTILIDADES =======
 
@@ -81,28 +82,51 @@ const actualizarEstadoFicha = async (req, res) => {
     const { idFicha } = req.params;
     const { estado } = req.body;
 
-    if (!idFicha || !estado) return res.status(400).json({ success: false, message: "Parámetros requeridos: idFicha y estado" });
+    console.log(`[LOG] Solicitud de actualización recibida: idFicha=${idFicha}, estado=${estado}`);
+
+    if (!idFicha || !estado)
+      return res.status(400).json({ success: false, message: "Parámetros requeridos: idFicha y estado" });
 
     const estadoNombre = validarEstado(estado);
-    if (!estadoNombre) return res.status(400).json({
-      success: false,
-      message: `Estado inválido. Valores permitidos: ${Object.keys({1:1,2:2,3:3,4:4}).join(", ")}`
-    });
+    if (!estadoNombre)
+      return res.status(400).json({
+        success: false,
+        message: `Estado inválido. Valores permitidos: 1,2,3,4`
+      });
 
     const ficha = await findFichaById(idFicha);
-    if (!ficha) return res.status(404).json({ success: false, message: `No se encontró ficha con ID ${idFicha}` });
+    if (!ficha)
+      return res.status(404).json({ success: false, message: `No se encontró ficha con ID ${idFicha}` });
 
+    console.log(`[LOG] Ficha actual antes de UPDATE:`, ficha);
+
+    // Actualizar estado
     await sequelize.query(
       `UPDATE dbo.tblFICHAS SET EstadoFicha = :estado WHERE IDFicha = :idFicha`,
       { replacements: { idFicha, estado } }
     );
 
-    res.json({ success: true, message: `Estado actualizado a '${estadoNombre}'`, data: { ...ficha, EstadoFicha: estado } });
+    // Recuperar ficha actualizada
+    const [result] = await sequelize.query(
+      `SELECT * FROM dbo.tblFICHAS WHERE IDFicha = :idFicha`,
+      { replacements: { idFicha } }
+    );
+    const fichaActualizada = result[0];
+
+    console.log(`[LOG] Ficha después de UPDATE:`, fichaActualizada);
+
+    // Emitir evento por socket
+    const io = getIO();
+    io.emit("fichaActualizada", fichaActualizada);
+    console.log(`[LOG] Emitido por socket fichaActualizada para idFicha=${idFicha}`);
+
+    res.json({ success: true, message: `Estado actualizado a '${estadoNombre}'`, data: fichaActualizada });
   } catch (error) {
     console.error("[ERROR actualizarEstadoFicha]", error);
     res.status(500).json({ success: false, message: "Error al actualizar estado de la ficha", error: error.message });
   }
 };
+
 
 // Consultas simples de valores únicos (medico, turno)
 const getValoresUnicos = async (req, res, campo, mensajeError) => {

@@ -2,7 +2,7 @@ import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
-import { io, Socket } from 'socket.io-client';
+import { FichasSocket } from '../../services/fichas-socket';
 
 @Component({
   selector: 'app-fichas',
@@ -14,71 +14,62 @@ import { io, Socket } from 'socket.io-client';
 export class Fichas implements OnInit {
   fichas: any[] = [];
   especialidades: any[] = [];
-  especialidadSeleccionada: string = '';
-  fechaSeleccionada: string = '';
+  especialidadSeleccionada = '';
+  fechaSeleccionada = '';
 
   private http = inject(HttpClient);
-  private socket!: Socket;
+  private fichasSocket = inject(FichasSocket);
 
   ngOnInit(): void {
-
-    this.conectarSocket();
+    //this.suscribirseSocket();
   }
 
-    // Nuevo método que se llama al cambiar la fecha
+  /*private suscribirseSocket(): void {
+  this.fichasSocket.onFichaActualizada().subscribe((data) => {
+    console.log('Evento recibido en Fichas:', data); // 🔥 Log de depuración
+
+    const index = this.fichas.findIndex(f => f.idFicha === data.idFicha);
+    if (index !== -1) {
+      this.fichas[index] = { ...this.fichas[index], EstadoFicha: data.estadoNombre };
+      this.fichas = [...this.fichas]; // refresco de la vista
+    }
+  });*/
+
+  /*this.fichasSocket.onFichasActualizadas().subscribe((data) => {
+    console.log('Recarga completa de fichas en Fichas:', data); // 🔥 Log
+    this.fichas = data;
+  });*/
+//}
+
+
   onFechaChange(valor: string) {
     this.fechaSeleccionada = valor;
-    console.log('Fecha seleccionada:', valor);
-
     if (!this.fechaSeleccionada) return;
-
     this.cargarEspecialidades();
   }
 
-  // Traer lista de especialidades desde backend
+  onEspecialidadChange(valor: string) {
+    this.especialidadSeleccionada = valor;
+  }
+
   cargarEspecialidades(): void {
     this.http.get<any>(`http://localhost:3000/especialidades/${this.fechaSeleccionada}`)
       .subscribe({
-        next: (res) => {
-          this.especialidades = res.data;
-          console.log('Especialidades:', this.especialidades);
-        },
+        next: (res) => this.especialidades = res.data,
         error: (err) => console.error('Error al cargar especialidades:', err)
       });
   }
 
-  onEspecialidadChange(valor: string) {
-  console.log('Especialidad seleccionada:', valor);
-}
-
-
-  // Cargar fichas filtradas por fecha y especialidad
   cargarFichas(): void {
-    console.log('Valor seleccionado:', this.especialidadSeleccionada);
     if (!this.fechaSeleccionada || !this.especialidadSeleccionada) {
       alert('Seleccione fecha y especialidad');
       return;
     }
-    console.log(this.fechaSeleccionada);
-    console.log(this.especialidadSeleccionada);
 
-    this.http.get<any>(
-      `http://localhost:3000/publicas/${this.fechaSeleccionada}/${this.especialidadSeleccionada}`
-    ).subscribe({
-      next: (res) => {
-        this.fichas = res.data;
-        console.log('Fichas cargadas:', this.fichas);
-      },
-      error: (err) => console.error('Error al obtener fichas:', err)
-    });
-  }
-
-  // Conexión a Socket.IO
-  conectarSocket(): void {
-    this.socket = io('http://localhost:3000');
-    this.socket.on('fichasActualizadas', (data: any[]) => {
-      this.fichas = data;
-      console.log('Fichas actualizadas en tiempo real:', this.fichas);
-    });
+    this.http.get<any>(`http://localhost:3000/publicas/${this.fechaSeleccionada}/${this.especialidadSeleccionada}`)
+      .subscribe({
+        next: (res) => this.fichas = res.data,
+        error: (err) => console.error('Error al obtener fichas:', err)
+      });
   }
 }

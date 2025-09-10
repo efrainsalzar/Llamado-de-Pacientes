@@ -5,36 +5,22 @@
   <div class="filtros">
     <label>
       Fecha:
-      <input
-        type="date"
-        [(ngModel)]="fechaSeleccionada"
-        (ngModelChange)="onFechaChange($event)"
-      />
+      <input type="date" [(ngModel)]="fechaSeleccionada" (ngModelChange)="onFechaChange($event)" />
     </label>
 
     <label>
       Médico:
-      <select
-        [(ngModel)]="medicoSeleccionado"
-        (ngModelChange)="onMedicoChange($event)"
-      >
-        <option value="" disabled selected>Seleccione médico</option>
-        <option *ngFor="let medico of medicos" [value]="medico.Medico">
-          {{ medico.Medico }}
-        </option>
+      <select [(ngModel)]="medicoSeleccionado" (ngModelChange)="onMedicoChange($event)">
+        <option value="" disabled>Seleccione médico</option>
+        <option *ngFor="let medico of medicos" [value]="medico.Medico">{{ medico.Medico }}</option>
       </select>
     </label>
 
     <label>
       Turno:
-      <select
-        [(ngModel)]="turnoSeleccionado"
-        (ngModelChange)="onTurnoChange($event)"
-      >
-        <option value="" disabled selected>Seleccione turno</option>
-        <option *ngFor="let turno of turnos" [value]="turno.Turno">
-          {{ turno.Turno }}
-        </option>
+      <select [(ngModel)]="turnoSeleccionado" (ngModelChange)="onTurnoChange($event)">
+        <option value="" disabled>Seleccione turno</option>
+        <option *ngFor="let turno of turnos" [value]="turno.Turno">{{ turno.Turno }}</option>
       </select>
     </label>
 
@@ -43,7 +29,9 @@
     </div>
   </div>
 
+  <!-- Tabla de fichas -->
   <!-- Tabla -->
+<ng-container *ngIf="fichas$ | async as fichas">
   <table *ngIf="fichas.length > 0">
     <thead>
       <tr>
@@ -70,12 +58,12 @@
   <p *ngIf="fichas.length === 0">
     No hay fichas para la fecha, médico o turno seleccionados.
   </p>
-</div>
 
-<!-- Acciones tabla -->
-<div class="acciones-tabla">
-  <button (click)="cancelarPaciente()">Cancelar Ficha</button>
-  <button (click)="llamarSiguiente()">Llamar Ficha</button>
-  <button (click)="atenderPaciente()">Ficha Atendida</button>
-  <button (click)="reiniciarEstado()">Reiniciar Atención</button>
-</div>
+  <!-- Acciones tabla -->
+  <div class="acciones-tabla" *ngIf="fichas.length > 0">
+    <button (click)="cancelarPaciente()">Cancelar Ficha</button>
+    <button (click)="llamarSiguiente()">Llamar Ficha</button>
+    <button (click)="atenderPaciente()">Ficha Atendida</button>
+    <button (click)="reiniciarEstado()">Reiniciar Atención</button>
+  </div>
+</ng-container>
