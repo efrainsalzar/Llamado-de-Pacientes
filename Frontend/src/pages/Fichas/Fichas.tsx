@@ -36,26 +36,31 @@ export default function Fichas() {
   // Inicializar Socket.IO
   useEffect(() => {
     const socket = getIO();
+    console.log("Conectado a Socket.IO");
 
-    socket.on("fichaActualizada", (data: FichaActualizadaEvent) => {
-      console.log("Evento recibido en Fichas:", data);
-      setFichas((prev) =>
-        prev.map((f) =>
-          f.idFicha === data.idFicha
-            ? { ...f, EstadoFicha: data.estadoNombre }
-            : f
-        )
-      );
-    });
+    const actualizarFicha = (f: any) => {
+      console.log("Evento Socket: fichaActualizada", f);
+      setFichas(prev => {
+        const index = prev.findIndex(p => p.idFicha === f.IDFicha);
+        if (index >= 0) {
+          const oldEstado = prev[index].EstadoFicha;
+          if (oldEstado !== f.EstadoFicha) {
+            console.log(`[SOCKET] Ficha ${f.IDFicha} actualizada: ${oldEstado} → ${f.EstadoFicha}`);
+          }
+          const newFichas = [...prev];
+          newFichas[index] = { ...prev[index], ...f, idFicha: f.IDFicha, EstadoFicha: f.EstadoFicha };
+          return newFichas;
+        } else {
+          console.log(`[SOCKET] Ficha nueva agregada: ${f.IDFicha}`);
+          return [...prev, { ...f, idFicha: f.IDFicha }];
+        }
+      });
+    };
 
-    socket.on("fichasActualizadas", (data: Ficha[]) => {
-      console.log("Recarga completa de fichas:", data);
-      setFichas(data);
-    });
-
+    socket.on("fichaActualizada", actualizarFicha);
     return () => {
-      socket.off("fichaActualizada");
-      socket.off("fichasActualizadas");
+      console.log("Desconectando Socket.IO");
+      socket.off("fichaActualizada", actualizarFicha);
     };
   }, []);
 

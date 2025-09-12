@@ -1,5 +1,5 @@
 //const Ficha = require("../models/fichaModel");
-const sequelize = require("../config/db");
+const {sequelize} = require("../config/db");
 //const { getIO } = require("../config/socket");
 
 // ======= CONSULTAS ESPECÍFICAS =======

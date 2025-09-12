@@ -58,6 +58,45 @@ export default function FichasHtml({
         </button>
       </div>
 
+            {/* Ficha llamada actualmente */}
+<div
+  style={{
+    padding: "15px",
+    marginBottom: "20px",
+    borderRadius: "8px",
+    border: "1px solid #ccc",
+    
+  }}
+>
+  <h2>Ficha en Llamado</h2>
+  {fichas.some((f) => f.EstadoFicha === "Llamado") ? (
+    fichas
+      .filter((f) => f.EstadoFicha === "Llamado")
+      .map((f) => (
+        <div key={f.idFicha}>
+          <p>
+            <strong>Ficha:</strong> {f.Ficha} | <strong>Ticket:</strong>{" "}
+            {f.Ticket}
+          </p>
+          <p>
+            <strong>Paciente:</strong> {f.paciente}
+          </p>
+          <p>
+            <strong>Médico:</strong> {f.medico}
+          </p>
+          <p>
+            <strong>Especialidad:</strong> {f.Especialidad}
+          </p>
+          <p>
+            <strong>Horario:</strong> {f.Horario}
+          </p>
+        </div>
+      ))
+  ) : (
+    <p style={{ color: "#666" }}>Ninguna ficha está siendo llamada.</p>
+  )}
+</div>
+
       {/* Tabla */}
       {fichas.length > 0 ? (
         <table border={1} cellPadding={5}>
