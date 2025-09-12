@@ -1,7 +1,9 @@
+import { Ficha } from "../../types/Ficha";
+
 interface Props {
   medicos: { Medico: string }[];
   turnos: { Turno: string }[];
-  fichas: any[];
+  fichas: Ficha[];
   fechaSeleccionada: string;
   medicoSeleccionado: string;
   turnoSeleccionado: string;
@@ -11,7 +13,11 @@ interface Props {
   cargarMedicos: () => void;
   cargarTurnos: () => void;
   cargarFichas: () => void;
-llamarSiguiente: () => void;
+
+  llamarSiguiente: () => void;
+  atenderSiguiente: () => void;
+  reiniciarSiguiente: () => void;
+  cancelarSiguiente: () => void;
 }
 
 export default function UsuariosVista(props: Props) {
@@ -28,7 +34,10 @@ export default function UsuariosVista(props: Props) {
     cargarMedicos,
     cargarTurnos,
     cargarFichas,
-    llamarSiguiente
+    llamarSiguiente,
+    atenderSiguiente,
+    reiniciarSiguiente,
+    cancelarSiguiente,
   } = props;
 
   return (
@@ -114,14 +123,16 @@ export default function UsuariosVista(props: Props) {
       ) : (
         <p>No hay fichas para la fecha, médico o turno seleccionados.</p>
       )}
-      <button onClick={llamarSiguiente} style={{ marginTop: "10px" }}>
-        Llamar siguiente
-        </button>
+      <button onClick={llamarSiguiente}>Llamar siguiente</button>
+      <button onClick={atenderSiguiente}>Atender ficha</button>
+      <button onClick={reiniciarSiguiente}>Reiniciar ficha</button>
+      <button onClick={cancelarSiguiente}>Cancelar ficha</button>
+
 
     </div>
-    
-    
-    
+
+
+
   );
-  
+
 }

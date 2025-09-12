@@ -1,4 +1,5 @@
-import { Ficha, Especialidad } from "./Fichas";
+import { Especialidad } from "./Fichas";
+import { Ficha } from "../../types/Ficha";
 
 interface Props {
   fichas: Ficha[];

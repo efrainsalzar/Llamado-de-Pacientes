@@ -2,9 +2,10 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import { getIO } from "../../services/socket";
 import FichasHtml from "./FichasVista";
+import { Ficha } from '../../types/Ficha';
 
 // Interfaces para tipado seguro
-export interface Ficha {
+/*export interface Ficha {
   idFicha: number;
   Ficha: number;
   Ticket: string;
@@ -15,7 +16,7 @@ export interface Ficha {
   Especialidad: string;
   medico: string;
   EstadoFicha: string;
-}
+}*/
 
 export interface Especialidad {
   Especialidad: string;

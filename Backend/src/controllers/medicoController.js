@@ -1,4 +1,4 @@
-const sequelize = require("../config/db");
+const {sequelize} = require("../config/db");
 const { getIO } = require("../config/socket");
 
 // ======= UTILIDADES =======
@@ -108,7 +108,7 @@ const actualizarEstadoFicha = async (req, res) => {
 
     // Recuperar ficha actualizada
     const [result] = await sequelize.query(
-      `SELECT * FROM dbo.tblFICHAS WHERE IDFicha = :idFicha`,
+      `SELECT * FROM dbo.vwFICHASPROGRAMADASV2 WHERE IDFicha = :idFicha`,
       { replacements: { idFicha } }
     );
     const fichaActualizada = result[0];

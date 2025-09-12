@@ -20,11 +20,12 @@ async function testConnection() {
   try {
     await sequelize.authenticate();
     console.log("Conectado a la base de datos a las:", new Date().toLocaleString());
+    return true;
   } catch (error) {
     console.error("No se pudo conectar:", error);
+    return false;
   }
 }
 
-testConnection();
 
-module.exports = sequelize;
+module.exports = {sequelize, testConnection};
