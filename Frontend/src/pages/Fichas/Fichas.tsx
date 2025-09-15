@@ -4,20 +4,7 @@ import { getIO } from "../../services/socket";
 import FichasHtml from "./FichasVista";
 import { Ficha } from '../../types/Ficha';
 
-// Interfaces para tipado seguro
-/*export interface Ficha {
-  idFicha: number;
-  Ficha: number;
-  Ticket: string;
-  Periodo: string;
-  FechaInicio: string;
-  Horario: string;
-  paciente: string;
-  Especialidad: string;
-  medico: string;
-  EstadoFicha: string;
-}*/
-
+// ================= Tipos =================
 export interface Especialidad {
   Especialidad: string;
 }
@@ -27,46 +14,84 @@ export interface FichaActualizadaEvent {
   estadoNombre: string;
 }
 
+// ================= Componente principal =================
 export default function Fichas() {
+  // ================= Estados =================
   const [fichas, setFichas] = useState<Ficha[]>([]);
   const [especialidades, setEspecialidades] = useState<Especialidad[]>([]);
   const [fechaSeleccionada, setFechaSeleccionada] = useState("");
   const [especialidadSeleccionada, setEspecialidadSeleccionada] = useState("");
 
-  // Inicializar Socket.IO
+  // ================= Socket.IO =================
   useEffect(() => {
-    const socket = getIO();
+    const socket = getIO(); // Inicializa la conexión a Socket.IO
     console.log("Conectado a Socket.IO");
 
-    const actualizarFicha = (f: any) => {
+    // Función que actualiza o agrega fichas al recibir evento desde el servidor
+    /*const actualizarFicha = (f: any) => {
       console.log("Evento Socket: fichaActualizada", f);
       setFichas(prev => {
         const index = prev.findIndex(p => p.idFicha === f.IDFicha);
         if (index >= 0) {
-          const oldEstado = prev[index].EstadoFicha;
-          if (oldEstado !== f.EstadoFicha) {
-            console.log(`[SOCKET] Ficha ${f.IDFicha} actualizada: ${oldEstado} → ${f.EstadoFicha}`);
-          }
+          // Actualizar ficha existente
           const newFichas = [...prev];
           newFichas[index] = { ...prev[index], ...f, idFicha: f.IDFicha, EstadoFicha: f.EstadoFicha };
           return newFichas;
         } else {
-          console.log(`[SOCKET] Ficha nueva agregada: ${f.IDFicha}`);
+          // Agregar ficha nueva
           return [...prev, { ...f, idFicha: f.IDFicha }];
         }
       });
+    };*/
+
+    const actualizarFicha = (f: any) => {
+      setFichas(prev => {
+        const index = prev.findIndex(p => p.idFicha === f.IDFicha);
+        const newFichas = [...prev];
+
+        if (index >= 0) {
+          // Detectar cambio de estado a "Llamado"
+          if (prev[index].EstadoFicha !== "Llamado" && f.EstadoFicha === "Llamado") {
+            //hablar(`Ficha número ${f.Ficha}, paciente ${f.paciente}, por favor diríjase al consultorio`);
+          }
+
+          newFichas[index] = { ...prev[index], ...f, idFicha: f.IDFicha, EstadoFicha: f.EstadoFicha };
+        } else {
+          // Nueva ficha (si ya viene en Llamado, también se habla)
+          if (f.EstadoFicha === "Llamado") {
+            //hablar(`Ficha número ${f.Ficha}, paciente ${f.paciente}, por favor diríjase al consultorio`);
+          }
+          newFichas.push({ ...f, idFicha: f.IDFicha });
+        }
+
+        return newFichas;
+      });
     };
 
+
+    // Escucha el evento "fichaActualizada" desde el servidor
     socket.on("fichaActualizada", actualizarFicha);
+
+    // Limpieza al desmontar el componente
     return () => {
-      console.log("Desconectando Socket.IO");
       socket.off("fichaActualizada", actualizarFicha);
     };
   }, []);
 
-  // Cargar especialidades
+  // ================= Conexión a la room pública =================
+  useEffect(() => {
+    const socket = getIO();
+
+    // Unirse a la room "pantalla_publica" para recibir todas las actualizaciones
+    socket.emit("joinRoom", { room: "pantalla_publica" });
+    console.log("[SOCKET] Conectado a room pantalla_publica");
+  }, []);
+
+  // ================= Funciones de carga de datos =================
+  // Cargar especialidades según la fecha seleccionada
   const cargarEspecialidades = async () => {
     if (!fechaSeleccionada) return;
+
     try {
       const res = await axios.get<{ data: Especialidad[] }>(
         `http://localhost:3000/especialidades/${fechaSeleccionada}`
@@ -77,12 +102,13 @@ export default function Fichas() {
     }
   };
 
-  // Cargar fichas
+  // Cargar fichas según fecha y especialidad seleccionadas
   const cargarFichas = async () => {
     if (!fechaSeleccionada || !especialidadSeleccionada) {
       alert("Seleccione fecha y especialidad");
       return;
     }
+
     try {
       const res = await axios.get<{ data: Ficha[] }>(
         `http://localhost:3000/publicas/${fechaSeleccionada}/${especialidadSeleccionada}`
@@ -93,6 +119,7 @@ export default function Fichas() {
     }
   };
 
+  // ================= Render =================
   return (
     <FichasHtml
       fichas={fichas}
@@ -105,4 +132,19 @@ export default function Fichas() {
       cargarFichas={cargarFichas}
     />
   );
+}
+
+// ================= Función para hablar por voz =================
+function hablar(texto: string) {
+  if (!("speechSynthesis" in window)) {
+    console.warn("SpeechSynthesis no soportado en este navegador");
+    return;
+  }
+
+  const utterance = new SpeechSynthesisUtterance(texto);
+  utterance.lang = "es-ES"; // español
+  utterance.rate = 1;        // velocidad
+  utterance.pitch = 1;       // tono
+  utterance.volume = 1;      // volumen
+  window.speechSynthesis.speak(utterance);
 }

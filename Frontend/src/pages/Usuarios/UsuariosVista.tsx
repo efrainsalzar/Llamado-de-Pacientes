@@ -89,9 +89,16 @@ export default function UsuariosVista(props: Props) {
           </select>
         </label>
 
-        <button onClick={cargarFichas} style={{ marginLeft: "10px" }}>
+        <button
+          onClick={() => {
+            console.log(`[UI] Cargando fichas para ${medicoSeleccionado} en ${fechaSeleccionada}`);
+            cargarFichas();
+          }}
+          style={{ marginLeft: "10px" }}
+        >
           Buscar todas las fichas
         </button>
+
       </div>
 
       {/* Tabla de fichas */}

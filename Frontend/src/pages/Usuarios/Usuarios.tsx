@@ -46,6 +46,14 @@ export default function Usuarios() {
       socket.off("fichaActualizada", actualizarFicha);
     };
   }, []);
+  // ================= Unirse a la room =================
+useEffect(() => {
+  const socket = getIO();
+  if (fechaSeleccionada && medicoSeleccionado) {
+    socket.emit("joinRoom", { medico: medicoSeleccionado, fecha: fechaSeleccionada });
+    console.log(`[SOCKET] Join room medico=${medicoSeleccionado}, fecha=${fechaSeleccionada}`);
+  }
+}, [fechaSeleccionada, medicoSeleccionado]);
 
   // ================= Función genérica para cargar datos =================
   const fetchData = useCallback(
