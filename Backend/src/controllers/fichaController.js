@@ -11,9 +11,8 @@ const getEspecialidad = async (req, res) => {
 
     const [fichas] = await sequelize.query(`
       SELECT DISTINCT
-          Descripcion AS Especialidad
-      FROM dbo.vwFICHASPROGRAMADASV2
-      WHERE CONVERT(date, Inicio) = :fecha;
+	      Servicio AS Especialidad
+      FROM dbo.vwFICHASPROGRAMADASV3
     `, {
       replacements: { fecha }
     });

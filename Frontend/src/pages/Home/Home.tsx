@@ -40,7 +40,7 @@ export default function Home() {
         </Link>
 
         <Link
-          to="/usuarios"
+          to="/login"
           onClick={() => handleClick("Usuarios")}
           style={{
             padding: "10px 20px",
@@ -51,7 +51,7 @@ export default function Home() {
             textAlign: "center"
           }}
         >
-          Usuarios
+          Medicos
         </Link>
       </div>
     </div>
