@@ -170,7 +170,7 @@ const getValoresUnicos = async (req, res, campo, mensajeError) => {
     const [result] = await sequelize.query(
       `
       SELECT DISTINCT ${campo} 
-      FROM dbo.vwFICHASPROGRAMADAS
+      FROM dbo.vwFICHASPROGRAMADASv2
       WHERE CONVERT(date, Inicio) = :fecha
     `,
       { replacements: { fecha } }
