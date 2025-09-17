@@ -3,12 +3,33 @@ import axios from "axios";
 import { getIO } from "../../services/socket";
 import UsuariosVista from "./UsuariosVista";
 import { Ficha } from '../../types/Ficha';
+import { getUsuarioInfo } from "../../services/jwt";
 
 // ================= Estados del componente =================
 interface Medico { Medico: string }
 interface Turno { Turno: string }
 
 export default function Usuarios() {
+  // =================  recuperar el jwt =================
+
+  useEffect(() => {
+    const savedToken = localStorage.getItem("token"); // Nombre de la clave usada en localStorage
+    if (savedToken) {
+      
+      console.log("Token recuperado:", savedToken);
+      // También puedes configurar axios para que use este token por defecto
+      axios.defaults.headers.common['Authorization'] = `Bearer ${savedToken}`;
+    } else {
+      console.log("No hay token en localStorage");
+      window.location.href = "/login"
+    }
+
+    const usuario = getUsuarioInfo();
+
+    console.log("Usuario desde JWT:", usuario);
+  }, []);
+
+// ================= Estados del componente =================
   const [medicos, setMedicos] = useState<Medico[]>([]);
   const [turnos, setTurnos] = useState<Turno[]>([]);
   const [fechaSeleccionada, setFechaSeleccionada] = useState("");
@@ -21,21 +42,21 @@ export default function Usuarios() {
     const socket = getIO();
     console.log("Conectado a Socket.IO");
 
-    const actualizarFicha = (f: any) => {
+    const actualizarFicha = (f: Ficha) => {
       console.log("Evento Socket: fichaActualizada", f);
       setFichas(prev => {
-        const index = prev.findIndex(p => p.idFicha === f.IDFicha);
+        const index = prev.findIndex(p => p.idFicha === f.idFicha);
         if (index >= 0) {
-          const oldEstado = prev[index].EstadoFicha;
-          if (oldEstado !== f.EstadoFicha) {
-            console.log(`[SOCKET] Ficha ${f.IDFicha} actualizada: ${oldEstado} → ${f.EstadoFicha}`);
+          const oldEstado = prev[index].DesEstadoVista;
+          if (oldEstado !== f.DesEstadoVista) {
+            console.log(`[SOCKET] Ficha ${f.idFicha} actualizada: ${oldEstado} → ${f.DesEstadoVista}`);
           }
           const newFichas = [...prev];
-          newFichas[index] = { ...prev[index], ...f, idFicha: f.IDFicha, EstadoFicha: f.EstadoFicha };
+          newFichas[index] = { ...prev[index], ...f, idFicha: f.idFicha, DesEstadoVista: f.DesEstadoVista };
           return newFichas;
         } else {
-          console.log(`[SOCKET] Ficha nueva agregada: ${f.IDFicha}`);
-          return [...prev, { ...f, idFicha: f.IDFicha }];
+          console.log(`[SOCKET] Ficha nueva agregada: ${f.idFicha}`);
+          return [...prev, { ...f, idFicha: f.idFicha }];
         }
       });
     };
@@ -128,20 +149,20 @@ useEffect(() => {
 
   // ================= Acciones específicas =================
   const llamarSiguiente = useCallback(() => {
-    if (fichas.some(f => f.EstadoFicha === "Llamado")) return;
-    procesarFichas(f => f.EstadoFicha === "En espera", "Llamado", 2, "llamar siguiente", { maxUno: true });
+    if (fichas.some(f => f.DesEstadoVista === "Llamado")) return;
+    procesarFichas(f => f.DesEstadoVista === "En espera", "Llamado", 2, "llamar siguiente", { maxUno: true });
   }, [fichas, procesarFichas]);
 
   const atenderSiguiente = useCallback(() => {
-    procesarFichas(f => f.EstadoFicha === "Llamado", "Atendido", 3, "atender siguiente", { maxUno: true });
+    procesarFichas(f => f.DesEstadoVista === "Llamado", "Atendido", 3, "atender siguiente", { maxUno: true });
   }, [procesarFichas]);
 
   const reiniciarSiguiente = useCallback(() => {
-    procesarFichas(f => f.EstadoFicha !== "En espera", "En espera", 1, "reiniciar siguiente");
+    procesarFichas(f => f.DesEstadoVista !== "En espera", "En espera", 1, "reiniciar siguiente");
   }, [procesarFichas]);
 
   const cancelarSiguiente = useCallback(() => {
-    procesarFichas(f => f.EstadoFicha !== "Cancelado" && f.EstadoFicha !== "Atendido", "Cancelado", 4, "cancelar siguiente", { maxUno: true });
+    procesarFichas(f => f.DesEstadoVista !== "Cancelado" && f.DesEstadoVista !== "Atendido", "Cancelado", 4, "cancelar siguiente", { maxUno: true });
   }, [procesarFichas]);
 
   // ================= Render =================

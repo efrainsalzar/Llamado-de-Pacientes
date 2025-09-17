@@ -122,7 +122,7 @@ export default function UsuariosVista(props: Props) {
                 <td>{f.Periodo}</td>
                 <td>{f.paciente}</td>
                 <td>{f.Especialidad}</td>
-                <td>{f.EstadoFicha}</td>
+                <td>{f.DesEstadoVista}</td>
               </tr>
             ))}
           </tbody>

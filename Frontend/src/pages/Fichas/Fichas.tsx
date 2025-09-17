@@ -51,14 +51,14 @@ export default function Fichas() {
 
         if (index >= 0) {
           // Detectar cambio de estado a "Llamado"
-          if (prev[index].EstadoFicha !== "Llamado" && f.EstadoFicha === "Llamado") {
+          if (prev[index].DesEstadoVista !== "Llamado" && f.DesEstadoVista === "Llamado") {
             //hablar(`Ficha número ${f.Ficha}, paciente ${f.paciente}, por favor diríjase al consultorio`);
           }
 
-          newFichas[index] = { ...prev[index], ...f, idFicha: f.IDFicha, EstadoFicha: f.EstadoFicha };
+          newFichas[index] = { ...prev[index], ...f, idFicha: f.IDFicha, DesEstadoVista: f.DesEstadoVista };
         } else {
           // Nueva ficha (si ya viene en Llamado, también se habla)
-          if (f.EstadoFicha === "Llamado") {
+          if (f.DesEstadoVista === "Llamado") {
             //hablar(`Ficha número ${f.Ficha}, paciente ${f.paciente}, por favor diríjase al consultorio`);
           }
           newFichas.push({ ...f, idFicha: f.IDFicha });
@@ -90,11 +90,9 @@ export default function Fichas() {
   // ================= Funciones de carga de datos =================
   // Cargar especialidades según la fecha seleccionada
   const cargarEspecialidades = async () => {
-    if (!fechaSeleccionada) return;
-
     try {
       const res = await axios.get<{ data: Especialidad[] }>(
-        `http://localhost:3000/especialidades/${fechaSeleccionada}`
+        `http://localhost:3000/especialidades`
       );
       setEspecialidades(res.data.data);
     } catch (err) {
@@ -104,14 +102,14 @@ export default function Fichas() {
 
   // Cargar fichas según fecha y especialidad seleccionadas
   const cargarFichas = async () => {
-    if (!fechaSeleccionada || !especialidadSeleccionada) {
-      alert("Seleccione fecha y especialidad");
+    if ( !especialidadSeleccionada) {
+      alert("Seleccione especialidad");
       return;
     }
 
     try {
       const res = await axios.get<{ data: Ficha[] }>(
-        `http://localhost:3000/publicas/${fechaSeleccionada}/${especialidadSeleccionada}`
+        `http://localhost:3000/publicas/${especialidadSeleccionada}`
       );
       setFichas(res.data.data);
     } catch (err) {

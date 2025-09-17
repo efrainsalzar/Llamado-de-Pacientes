@@ -8,5 +8,5 @@ export interface Ficha {
   paciente: string;
   Especialidad: string;
   medico: string;
-  EstadoFicha: string;
+  DesEstadoVista: string;
 }

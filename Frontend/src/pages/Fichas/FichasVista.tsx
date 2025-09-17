@@ -17,9 +17,9 @@ interface Props {
 export default function FichasHtml({
   fichas,
   especialidades,
-  fechaSeleccionada,
+  
   especialidadSeleccionada,
-  setFechaSeleccionada,
+  
   setEspecialidadSeleccionada,
   cargarEspecialidades,
   cargarFichas,
@@ -30,23 +30,19 @@ export default function FichasHtml({
 
       {/* Filtros */}
       <div style={{ marginBottom: "20px" }}>
-        <label>
-          Fecha:
-          <input
-            type="date"
-            value={fechaSeleccionada}
-            onChange={(e) => setFechaSeleccionada(e.target.value)}
-            onBlur={cargarEspecialidades}
-          />
-        </label>
-
         <label style={{ marginLeft: "10px" }}>
           Especialidad:
           <select
             value={especialidadSeleccionada}
             onChange={(e) => setEspecialidadSeleccionada(e.target.value)}
+            onFocus={() => {
+              // Solo cargar si no hay especialidades
+              if (especialidades.length === 0) {
+                cargarEspecialidades();
+              }
+            }}
           >
-            <option value="">Seleccione especialidad</option>
+            <option value="">--Seleccione especialidad--</option>
             {especialidades.map((esp) => (
               <option key={esp.Especialidad} value={esp.Especialidad}>
                 {esp.Especialidad}
@@ -60,36 +56,36 @@ export default function FichasHtml({
         </button>
       </div>
 
-            {/* Fichas llamadas actualmente */}
-<div style={{ marginBottom: "20px" }}>
-  <h2>Fichas en Llamado</h2>
-  {fichas.filter(f => f.EstadoFicha === "Llamado").length > 0 ? (
-    <div style={{ display: "flex", flexWrap: "wrap", gap: "15px" }}>
-      {fichas
-        .filter(f => f.EstadoFicha === "Llamado")
-        .map(f => (
-          <div
-            key={f.idFicha}
-            style={{
-              flex: "1 0 250px",
-              padding: "15px",
-              borderRadius: "8px",
-              border: "2px solid #ffffffff",
-            }}
-          >
-            <p><strong>Ficha:</strong> {f.Ficha}</p>
-            <p><strong>Ticket:</strong> {f.Ticket}</p>
-            <p><strong>Paciente:</strong> {f.paciente}</p>
-            <p><strong>Médico:</strong> {f.medico}</p>
-            <p><strong>Especialidad:</strong> {f.Especialidad}</p>
-            <p><strong>Horario:</strong> {f.Horario}</p>
+      {/* Fichas llamadas actualmente */}
+      <div style={{ marginBottom: "20px" }}>
+        <h2>Fichas en Llamado</h2>
+        {fichas.filter(f => f.DesEstadoVista === "Llamado").length > 0 ? (
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "15px" }}>
+            {fichas
+              .filter(f => f.DesEstadoVista === "Llamado")
+              .map(f => (
+                <div
+                  key={f.idFicha}
+                  style={{
+                    flex: "1 0 250px",
+                    padding: "15px",
+                    borderRadius: "8px",
+                    border: "2px solid #ffffffff",
+                  }}
+                >
+                  <p><strong>Ficha:</strong> {f.Ficha}</p>
+                  <p><strong>Ticket:</strong> {f.Ticket}</p>
+                  <p><strong>Paciente:</strong> {f.paciente}</p>
+                  <p><strong>Médico:</strong> {f.medico}</p>
+                  <p><strong>Especialidad:</strong> {f.Especialidad}</p>
+                  <p><strong>Horario:</strong> {f.Horario}</p>
+                </div>
+              ))}
           </div>
-        ))}
-    </div>
-  ) : (
-    <p style={{ color: "#666" }}>No hay fichas siendo llamadas actualmente.</p>
-  )}
-</div>
+        ) : (
+          <p style={{ color: "#666" }}>No hay fichas siendo llamadas actualmente.</p>
+        )}
+      </div>
 
 
 
@@ -120,7 +116,7 @@ export default function FichasHtml({
                 <td>{f.paciente}</td>
                 <td>{f.Especialidad}</td>
                 <td>{f.medico}</td>
-                <td>{f.EstadoFicha}</td>
+                <td>{f.DesEstadoVista}</td>
               </tr>
             ))}
           </tbody>

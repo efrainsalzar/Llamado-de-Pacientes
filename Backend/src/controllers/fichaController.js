@@ -45,27 +45,28 @@ const getEspecialidad = async (req, res) => {
 };
 
 
-const obtenerFichasPublicasPorFecha = async (req, res) => {
+const obtenerFichasPublicas = async (req, res) => {
   try {
-    const { especialidad ,fecha } = req.params; 
-    const [fichas] = await sequelize.query(`
-      SELECT 
+    const { especialidad } = req.params; 
+    const [fichas] = await sequelize.query(
+      `
+        SELECT 
           idFicha,
           Ficha,
           Periodo,
+          DesEstadoVista,
           CONVERT(date, Inicio) AS FechaInicio,
           Horario,
           Ticket,
           paciente,
-          Descripcion AS Especialidad,
-          medico,
-          EstadoFicha
-      FROM dbo.vwFICHASPROGRAMADASV2
-      WHERE CONVERT(date, Inicio) = :fecha 
-      AND Descripcion = :especialidad
-      ORDER BY Periodo, Ficha;
-    `, {
-      replacements: { fecha, especialidad }
+          Servicio AS Especialidad,
+          medico
+        FROM dbo.vwFICHASPROGRAMADASV3
+        WHERE 
+        Servicio = :especialidad
+        ORDER BY Periodo, Ficha;
+      `, {
+      replacements: { especialidad }
     });
 
     res.status(200).json({
@@ -73,7 +74,7 @@ const obtenerFichasPublicasPorFecha = async (req, res) => {
       data: fichas
     });
   } catch (error) {
-    console.error("[ERROR obtenerFichasPublicasPorFecha]", error.message);
+    console.error("[ERROR obtener Fichas Publicas]", error.message);
     res.status(500).json({
       success: false,
       message: "Error al obtener fichas públicas",
@@ -85,5 +86,5 @@ const obtenerFichasPublicasPorFecha = async (req, res) => {
 
 module.exports = {
   getEspecialidad,
-  obtenerFichasPublicasPorFecha,
+  obtenerFichasPublicas,
 };

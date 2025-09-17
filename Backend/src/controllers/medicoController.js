@@ -47,7 +47,7 @@ const getFichas = async ({ medico, fecha, periodo }) => {
         Descripcion AS Especialidad,
         medico,
         EstadoFicha
-    FROM dbo.vwFICHASPROGRAMADASV2
+    FROM dbo.vwFICHASPROGRAMADASV3
     WHERE CONVERT(date, Inicio) = :fecha
       AND medico LIKE :medico
   `;
