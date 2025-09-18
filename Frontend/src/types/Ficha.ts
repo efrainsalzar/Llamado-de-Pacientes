@@ -1,12 +1,12 @@
 export interface Ficha {
-  idFicha: number;
+  IDFicha: number;
   Ficha: number;
   Ticket: string;
   Periodo: string;
   FechaInicio: string;
   Horario: string;
   paciente: string;
-  Especialidad: string;
+  Servicio: string;
   medico: string;
   DesEstadoVista: string;
 }

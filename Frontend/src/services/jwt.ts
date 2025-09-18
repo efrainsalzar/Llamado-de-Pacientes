@@ -3,9 +3,9 @@ import {jwtDecode} from "jwt-decode";
 export interface Payload {
   id: number;
   nombre: string;
-  cuaCodigo: number;
-  iat?: number; // issued at
-  exp?: number; // expiration
+  IdProfesional: number;
+  //iat?: number; // issued at
+  //exp?: number; // expiration
 }
 
 /**
@@ -21,7 +21,7 @@ export function getUsuarioInfo(): Payload | null {
     return {
       id: decoded.id,
       nombre: decoded.nombre,
-      cuaCodigo: decoded.cuaCodigo
+      IdProfesional: decoded.IdProfesional
     };
   } catch (err) {
     console.error("Error decodificando el JWT:", err);

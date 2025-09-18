@@ -1,17 +1,7 @@
 import { Ficha } from "../../types/Ficha";
 
 interface Props {
-  medicos: { Medico: string }[];
-  turnos: { Turno: string }[];
   fichas: Ficha[];
-  fechaSeleccionada: string;
-  medicoSeleccionado: string;
-  turnoSeleccionado: string;
-  setFechaSeleccionada: (val: string) => void;
-  setMedicoSeleccionado: (val: string) => void;
-  setTurnoSeleccionado: (val: string) => void;
-  cargarMedicos: () => void;
-  cargarTurnos: () => void;
   cargarFichas: () => void;
 
   llamarSiguiente: () => void;
@@ -22,17 +12,7 @@ interface Props {
 
 export default function UsuariosVista(props: Props) {
   const {
-    medicos,
-    turnos,
     fichas,
-    fechaSeleccionada,
-    medicoSeleccionado,
-    turnoSeleccionado,
-    setFechaSeleccionada,
-    setMedicoSeleccionado,
-    setTurnoSeleccionado,
-    cargarMedicos,
-    cargarTurnos,
     cargarFichas,
     llamarSiguiente,
     atenderSiguiente,
@@ -42,56 +22,23 @@ export default function UsuariosVista(props: Props) {
 
   return (
     <div style={{ padding: "20px" }}>
-      <h1>Lista de Fichas por Médico</h1>
+      <h1>Lista de Fichas Médico</h1>
 
       {/* Filtros */}
       <div style={{ marginBottom: "20px" }}>
-        <label>
-          Fecha:
-          <input
-            type="date"
-            value={fechaSeleccionada}
-            onChange={(e) => setFechaSeleccionada(e.target.value)}
-            onBlur={() => {
-              cargarMedicos();
-              cargarTurnos();
-            }}
-          />
-        </label>
-
-        <label style={{ marginLeft: "10px" }}>
-          Médico:
-          <select
-            value={medicoSeleccionado}
-            onChange={(e) => setMedicoSeleccionado(e.target.value)}
-          >
-            <option value="">Seleccione médico</option>
-            {medicos.map((m) => (
-              <option key={m.Medico} value={m.Medico}>
-                {m.Medico}
-              </option>
-            ))}
-          </select>
-        </label>
 
         <label style={{ marginLeft: "10px" }}>
           Turno:
-          <select
-            value={turnoSeleccionado}
-            onChange={(e) => setTurnoSeleccionado(e.target.value)}
-          >
+          <select>
             <option value="">Seleccione turno</option>
-            {turnos.map((t) => (
-              <option key={t.Turno} value={t.Turno}>
-                {t.Turno}
-              </option>
-            ))}
+            <option>mañana</option>
+            <option>tarde</option>
           </select>
         </label>
 
         <button
           onClick={() => {
-            console.log(`[UI] Cargando fichas para ${medicoSeleccionado} en ${fechaSeleccionada}`);
+            //console.log(`[UI] Cargando fichas para ${medicoSeleccionado} en ${fechaSeleccionada}`);
             cargarFichas();
           }}
           style={{ marginLeft: "10px" }}
@@ -116,12 +63,12 @@ export default function UsuariosVista(props: Props) {
           </thead>
           <tbody>
             {fichas.map((f) => (
-              <tr key={f.idFicha}>
+              <tr key={f.IDFicha}>
                 <td>{f.Ficha}</td>
                 <td>{f.Ticket}</td>
                 <td>{f.Periodo}</td>
                 <td>{f.paciente}</td>
-                <td>{f.Especialidad}</td>
+                <td>{f.Servicio}</td>
                 <td>{f.DesEstadoVista}</td>
               </tr>
             ))}
@@ -135,11 +82,6 @@ export default function UsuariosVista(props: Props) {
       <button onClick={reiniciarSiguiente}>Reiniciar ficha</button>
       <button onClick={cancelarSiguiente}>Cancelar ficha</button>
 
-
     </div>
-
-
-
   );
-
 }

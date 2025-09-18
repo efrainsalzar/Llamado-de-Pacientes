@@ -1,82 +1,80 @@
 import { useState, useEffect, useCallback } from "react";
 import axios from "axios";
-import { getIO } from "../../services/socket";
+import { getIO, initSocket } from "../../services/socket";
 import UsuariosVista from "./UsuariosVista";
 import { Ficha } from '../../types/Ficha';
 import { getUsuarioInfo } from "../../services/jwt";
 
-// ================= Estados del componente =================
-interface Medico { Medico: string }
-interface Turno { Turno: string }
+// interface Medico { Medico: string }
 
 export default function Usuarios() {
-  // =================  recuperar el jwt =================
 
+  const [fichas, setFichas] = useState<Ficha[]>([]);
+  const [usuario, setUsuario] = useState<{ id: number; nombre: string; IdProfesional: number } | null>(null);
+
+  // ================= Recuperar JWT =================
   useEffect(() => {
-    const savedToken = localStorage.getItem("token"); // Nombre de la clave usada en localStorage
+    const savedToken = localStorage.getItem("token");
     if (savedToken) {
-      
       console.log("Token recuperado:", savedToken);
-      // También puedes configurar axios para que use este token por defecto
       axios.defaults.headers.common['Authorization'] = `Bearer ${savedToken}`;
+      const user = getUsuarioInfo();
+      setUsuario(user);
+      console.log("Usuario desde JWT:", user);
     } else {
       console.log("No hay token en localStorage");
-      window.location.href = "/login"
+      window.location.href = "/login";
     }
-
-    const usuario = getUsuarioInfo();
-
-    console.log("Usuario desde JWT:", usuario);
   }, []);
-
-// ================= Estados del componente =================
-  const [medicos, setMedicos] = useState<Medico[]>([]);
-  const [turnos, setTurnos] = useState<Turno[]>([]);
-  const [fechaSeleccionada, setFechaSeleccionada] = useState("");
-  const [medicoSeleccionado, setMedicoSeleccionado] = useState("");
-  const [turnoSeleccionado, setTurnoSeleccionado] = useState("");
-  const [fichas, setFichas] = useState<Ficha[]>([]);
 
   // ================= Socket.IO =================
   useEffect(() => {
-    const socket = getIO();
-    console.log("Conectado a Socket.IO");
+    const socket = initSocket(); // inicializar una sola vez
+    console.log("Socket inicializado y conectado");
 
+    // Escuchar confirmación de room
+    socket.on("joinedRoom", (payload: { room: string }) => {
+      console.log("[SOCKET] Conectado a la room:", payload.room);
+    });
+
+    // Escuchar actualización de fichas
     const actualizarFicha = (f: Ficha) => {
       console.log("Evento Socket: fichaActualizada", f);
       setFichas(prev => {
-        const index = prev.findIndex(p => p.idFicha === f.idFicha);
+        const index = prev.findIndex(p => p.IDFicha === f.IDFicha);
         if (index >= 0) {
           const oldEstado = prev[index].DesEstadoVista;
           if (oldEstado !== f.DesEstadoVista) {
-            console.log(`[SOCKET] Ficha ${f.idFicha} actualizada: ${oldEstado} → ${f.DesEstadoVista}`);
+            console.log(`[SOCKET] Ficha ${f.IDFicha} actualizada: ${oldEstado} → ${f.DesEstadoVista}`);
           }
           const newFichas = [...prev];
-          newFichas[index] = { ...prev[index], ...f, idFicha: f.idFicha, DesEstadoVista: f.DesEstadoVista };
+          newFichas[index] = { ...prev[index], ...f, IDFicha: f.IDFicha, DesEstadoVista: f.DesEstadoVista };
           return newFichas;
         } else {
-          console.log(`[SOCKET] Ficha nueva agregada: ${f.idFicha}`);
-          return [...prev, { ...f, idFicha: f.idFicha }];
+          console.log(`[SOCKET] Ficha nueva agregada: ${f.IDFicha}`);
+          return [...prev, { ...f, IDFicha: f.IDFicha }];
         }
       });
     };
-
     socket.on("fichaActualizada", actualizarFicha);
+
     return () => {
       console.log("Desconectando Socket.IO");
       socket.off("fichaActualizada", actualizarFicha);
+      socket.disconnect();
     };
-  }, []);
-  // ================= Unirse a la room =================
-useEffect(() => {
-  const socket = getIO();
-  if (fechaSeleccionada && medicoSeleccionado) {
-    socket.emit("joinRoom", { medico: medicoSeleccionado, fecha: fechaSeleccionada });
-    console.log(`[SOCKET] Join room medico=${medicoSeleccionado}, fecha=${fechaSeleccionada}`);
-  }
-}, [fechaSeleccionada, medicoSeleccionado]);
+  }, []); // solo al montar
 
-  // ================= Función genérica para cargar datos =================
+  // ================= Unirse a room cuando usuario esté disponible =================
+  useEffect(() => {
+    if (!usuario?.IdProfesional) return;
+    const socket = getIO();
+    socket.emit("joinRoom", { idProfesional: usuario.IdProfesional });
+    console.log(`[SOCKET] Solicitando unirse a room idProfesional=${usuario.IdProfesional}`);
+  }, [usuario]);
+
+
+  // ================= Funciones de carga =================
   const fetchData = useCallback(
     async <T,>(url: string, setter: (data: T) => void, label: string) => {
       try {
@@ -84,6 +82,8 @@ useEffect(() => {
         const res = await axios.get(url);
         setter(res.data.data as T);
         console.log(`[CARGA] ${label} cargados: ${res.data.data.length}`);
+        console.log(res.data);
+
       } catch (err) {
         console.error(`[ERROR] al cargar ${label}:`, err);
       }
@@ -91,29 +91,18 @@ useEffect(() => {
     []
   );
 
-  // ================= Funciones de carga =================
-  const cargarMedicos = useCallback(() => {
-    if (!fechaSeleccionada) return;
-    fetchData<Medico[]>(`http://localhost:3000/medicos/${fechaSeleccionada}`, setMedicos, "Médicos");
-  }, [fechaSeleccionada, fetchData]);
-
-  const cargarTurnos = useCallback(() => {
-    if (!fechaSeleccionada) return;
-    fetchData<Turno[]>(`http://localhost:3000/turnos/${fechaSeleccionada}`, setTurnos, "Turnos");
-  }, [fechaSeleccionada, fetchData]);
-
   const cargarFichas = useCallback(async () => {
-    if (!fechaSeleccionada || !medicoSeleccionado) {
-      alert("Seleccione fecha y médico");
+    if (!usuario?.IdProfesional) {
+      alert("No se pudo obtener el IdProfesional del usuario");
       return;
     }
-    const url = turnoSeleccionado
-      ? `http://localhost:3000/medicoPeriodo/${fechaSeleccionada}/${medicoSeleccionado}/${turnoSeleccionado}`
-      : `http://localhost:3000/medico/${fechaSeleccionada}/${medicoSeleccionado}`;
-    await fetchData<Ficha[]>(url, setFichas, "Fichas");
-  }, [fechaSeleccionada, medicoSeleccionado, turnoSeleccionado, fetchData]);
 
-  // ================= Función genérica para procesar fichas =================
+    const url = `http://localhost:3000/obtenerFichas/${usuario.IdProfesional}`;
+
+    await fetchData<Ficha[]>(url, setFichas, "Fichas");
+  }, [usuario, fetchData]);
+
+  // ================= Procesar fichas (igual que antes) =================
   const procesarFichas = useCallback(
     async (
       filtro: (f: Ficha) => boolean,
@@ -130,14 +119,14 @@ useEffect(() => {
           return prevFichas;
         }
         console.log(`[PROCESO] ${fichasAFiltrar.length} ficha(s) para ${label}, nuevo estado: ${nuevoEstado}`);
-        return prevFichas.map(f => fichasAFiltrar.some(ff => ff.idFicha === f.idFicha) ? { ...f, EstadoFicha: nuevoEstado } : f);
+        return prevFichas.map(f => fichasAFiltrar.some(ff => ff.IDFicha === f.IDFicha) ? { ...f, EstadoFicha: nuevoEstado } : f);
       });
 
       try {
         await Promise.all(
           fichas.filter(filtro).slice(0, opciones?.maxUno ? 1 : undefined)
             .map(async f => {
-              await axios.put(`http://localhost:3000/actualizarEstadoFicha/${f.idFicha}`, { estado: codigoBackend });
+              await axios.patch(`http://localhost:3000/actualizarEstadoFicha/${f.IDFicha}`, { estado: codigoBackend });
             })
         );
       } catch (err) {
@@ -147,7 +136,6 @@ useEffect(() => {
     [fichas]
   );
 
-  // ================= Acciones específicas =================
   const llamarSiguiente = useCallback(() => {
     if (fichas.some(f => f.DesEstadoVista === "Llamado")) return;
     procesarFichas(f => f.DesEstadoVista === "En espera", "Llamado", 2, "llamar siguiente", { maxUno: true });
@@ -165,20 +153,9 @@ useEffect(() => {
     procesarFichas(f => f.DesEstadoVista !== "Cancelado" && f.DesEstadoVista !== "Atendido", "Cancelado", 4, "cancelar siguiente", { maxUno: true });
   }, [procesarFichas]);
 
-  // ================= Render =================
   return (
     <UsuariosVista
-      medicos={medicos}
-      turnos={turnos}
       fichas={fichas}
-      fechaSeleccionada={fechaSeleccionada}
-      medicoSeleccionado={medicoSeleccionado}
-      turnoSeleccionado={turnoSeleccionado}
-      setFechaSeleccionada={setFechaSeleccionada}
-      setMedicoSeleccionado={setMedicoSeleccionado}
-      setTurnoSeleccionado={setTurnoSeleccionado}
-      cargarMedicos={cargarMedicos}
-      cargarTurnos={cargarTurnos}
       cargarFichas={cargarFichas}
       llamarSiguiente={llamarSiguiente}
       atenderSiguiente={atenderSiguiente}

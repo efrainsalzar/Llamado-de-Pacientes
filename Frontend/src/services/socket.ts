@@ -4,7 +4,7 @@ let socket: Socket | null = null;
 
 export function initSocket() {
   socket = io("http://localhost:3000"); // URL del backend
-  console.log("socker inicializado")
+  console.log("socket inicializado")
   return socket;
 }
 

@@ -1,6 +1,8 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 export default function Login() {
+  const navigate = useNavigate();
   const [usuario, setUsuario] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -36,7 +38,7 @@ export default function Login() {
 
         console.log("Login exitoso:", data);
       //  redirigir a la página USUARIOS
-        window.location.href = "/usuarios";
+        navigate("/usuarios");
         
 
     } catch (err) {

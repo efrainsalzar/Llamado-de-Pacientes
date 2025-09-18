@@ -1,18 +1,14 @@
 const { sequelize } = require("../config/db");
-const { getIO } = require("../config/socket");
+const { getIO, makeRoomName } = require("../config/socket");
 
 // ======= UTILIDADES =======
-
-function makeRoomName(medico, fecha) {
-  return `room_${medico}_${fecha}`;
-}
 
 /**
  * Buscar ficha por ID
  */
 const findFichaById = async (idFicha) => {
   const [result] = await sequelize.query(
-    `SELECT * FROM dbo.tblFICHAS WHERE IDFicha = :idFicha`,
+    `SELECT * FROM dbo.tblEstadoVista WHERE idFichas = :idFicha`,
     { replacements: { idFicha } }
   );
   return result[0] || null;
@@ -32,26 +28,26 @@ const validarEstado = (estado) => {
 };
 
 /**
- * Ejecutar consulta genérica para fichas por médico, fecha y opcional periodo
+ * Ejecutar consulta genérica y opcional periodo
  */
-const getFichas = async ({ medico, fecha, periodo }) => {
+const getFichas = async ({ idProfesional, periodo }) => {
   let query = `
     SELECT 
-        idFicha,
+        IDFicha,
         Ficha,
         Periodo,
         CONVERT(varchar(10), Inicio, 23) AS FechaInicio,
         Horario,
         Ticket,
         paciente,
-        Descripcion AS Especialidad,
+        Servicio,
+        IDProfesional,
         medico,
-        EstadoFicha
+        DesEstadoVista
     FROM dbo.vwFICHASPROGRAMADASV3
-    WHERE CONVERT(date, Inicio) = :fecha
-      AND medico LIKE :medico
+    WHERE IDProfesional = :idProfesional
   `;
-  const replacements = { fecha, medico: `%${medico}%` };
+  const replacements = { idProfesional };
 
   if (periodo) {
     query += ` AND Periodo = :periodo`;
@@ -66,27 +62,42 @@ const getFichas = async ({ medico, fecha, periodo }) => {
 
 // ======= CONTROLADORES =======
 
-const BuscarIdFicha = async (req, res) => {
+const obtenerFichasMedico = async (req, res) => {
   try {
-    const { idFicha } = req.params;
-    if (!idFicha)
-      return res
-        .status(400)
-        .json({ success: false, message: "Falta el parámetro: idFicha" });
-
-    const ficha = await findFichaById(idFicha);
-    if (!ficha)
-      return res.status(404).json({
+    const { idProfesional } = req.params;
+    if (!idProfesional)
+      return res.status(400).json({
         success: false,
-        message: `No se encontró ficha con ID ${idFicha}`,
+        message: "Faltan parámetros: idProfesional del medico",
       });
 
-    res.json({ success: true, data: ficha });
+    const fichas = await getFichas({ idProfesional });
+    res.json({ success: true, data: fichas });
   } catch (error) {
-    console.error("[ERROR BuscarIdFicha]", error);
+    console.error("[ERROR fichas profesional]", error.message);
     res.status(500).json({
       success: false,
-      message: "Error al obtener ficha por ID",
+      message: "Error al obtener fichas del médico",
+      error: error.message,
+    });
+  }
+};
+const obtenerFichasMedicoPeriodo = async (req, res) => {
+  try {
+    const { idProfesional, periodo } = req.params;
+    if (!idProfesional)
+      return res.status(400).json({
+        success: false,
+        message: "Faltan parámetros: idProfesional o periodo",
+      });
+
+    const fichas = await getFichas({ idProfesional, periodo });
+    res.json({ success: true, data: fichas });
+  } catch (error) {
+    console.error("[ERROR idProfesional o periodo]", error.message);
+    res.status(500).json({
+      success: false,
+      message: "Error al obtener fichas del médico y periodo",
       error: error.message,
     });
   }
@@ -97,9 +108,9 @@ const actualizarEstadoFicha = async (req, res) => {
     const { idFicha } = req.params;
     const { estado } = req.body;
 
-    console.log(
+    /*console.log(
       `[LOG] Solicitud de actualización recibida: idFicha=${idFicha}, estado=${estado}`
-    );
+    );*/
 
     if (!idFicha || !estado)
       return res.status(400).json({
@@ -125,23 +136,22 @@ const actualizarEstadoFicha = async (req, res) => {
 
     // Actualizar estado
     await sequelize.query(
-      `UPDATE dbo.tblFICHAS SET EstadoFicha = :estado WHERE IDFicha = :idFicha`,
+      `UPDATE tblEstadoVista SET idEstado = :estado WHERE idFichas = :idFicha`,
       { replacements: { idFicha, estado } }
     );
 
     // Recuperar ficha actualizada
     const [result] = await sequelize.query(
-      `SELECT * FROM dbo.vwFICHASPROGRAMADASV2 WHERE IDFicha = :idFicha`,
+      `SELECT * FROM dbo.vwFICHASPROGRAMADASV3 WHERE IDFicha = :idFicha`,
       { replacements: { idFicha } }
     );
     const fichaActualizada = result[0];
-    console.log(`[LOG] Ficha después de UPDATE:`, fichaActualizada);
+    console.log(
+      `[LOG] Ficha después de UPDATE: IDFicha=${fichaActualizada.IDFicha}, IDEstado=${fichaActualizada.idEstadoVista}`
+    );
     // Emitir evento por socket
     const io = getIO();
-    const roomMedico = makeRoomName(
-      fichaActualizada.medico,
-      fichaActualizada.FechaInicio
-    );
+    const roomMedico = makeRoomName(fichaActualizada.IDProfesional);
     // Emitir solo a la room del médico y además a la pantalla pública
     io.to(roomMedico).emit("fichaActualizada", fichaActualizada);
     io.to("pantalla_publica").emit("fichaActualizada", fichaActualizada);
@@ -163,80 +173,8 @@ const actualizarEstadoFicha = async (req, res) => {
   }
 };
 
-// Consultas simples de valores únicos (medico, turno)
-const getValoresUnicos = async (req, res, campo, mensajeError) => {
-  try {
-    const { fecha } = req.params;
-    const [result] = await sequelize.query(
-      `
-      SELECT DISTINCT ${campo} 
-      FROM dbo.vwFICHASPROGRAMADASv2
-      WHERE CONVERT(date, Inicio) = :fecha
-    `,
-      { replacements: { fecha } }
-    );
-
-    res.json({ success: true, data: result });
-  } catch (error) {
-    console.error(`[ERROR ${mensajeError}]`, error.message);
-    res.status(500).json({
-      success: false,
-      message: `Error al obtener ${mensajeError}`,
-      error: error.message,
-    });
-  }
-};
-
-const getMedico = (req, res) =>
-  getValoresUnicos(req, res, "medico AS Medico", "medicos");
-const getTurno = (req, res) =>
-  getValoresUnicos(req, res, "Periodo AS Turno", "turnos");
-
-const obtenerFichasPorMedico = async (req, res) => {
-  try {
-    const { medico, fecha } = req.params;
-    if (!medico || !fecha)
-      return res
-        .status(400)
-        .json({ success: false, message: "Faltan parámetros: medico o fecha" });
-
-    const fichas = await getFichas({ medico, fecha });
-    res.json({ success: true, data: fichas });
-  } catch (error) {
-    console.error("[ERROR fichas por medicos]", error.message);
-    res.status(500).json({
-      success: false,
-      message: "Error al obtener fichas del médico",
-      error: error.message,
-    });
-  }
-};
-
-const obtenerFichasPorMedicoPeriodo = async (req, res) => {
-  try {
-    const { medico, fecha, periodo } = req.params;
-    if (!medico || !fecha)
-      return res
-        .status(400)
-        .json({ success: false, message: "Faltan parámetros: medico o fecha" });
-
-    const fichas = await getFichas({ medico, fecha, periodo });
-    res.json({ success: true, data: fichas });
-  } catch (error) {
-    console.error("[ERROR fichas por medicos periodo]", error.message);
-    res.status(500).json({
-      success: false,
-      message: "Error al obtener fichas del médico",
-      error: error.message,
-    });
-  }
-};
-
 module.exports = {
-  BuscarIdFicha,
+  obtenerFichasMedico,
+  obtenerFichasMedicoPeriodo,
   actualizarEstadoFicha,
-  getMedico,
-  getTurno,
-  obtenerFichasPorMedico,
-  obtenerFichasPorMedicoPeriodo,
 };
