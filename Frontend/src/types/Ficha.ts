@@ -7,6 +7,7 @@ export interface Ficha {
   Horario: string;
   paciente: string;
   Servicio: string;
+  Consultorio: string;
   medico: string;
   DesEstadoVista: string;
 }

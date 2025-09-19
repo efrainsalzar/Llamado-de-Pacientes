@@ -25,7 +25,7 @@ export default function Fichas() {
         if (index >= 0) {
           // Detectar cambio de estado a "Llamado"
           if (prev[index].DesEstadoVista !== "Llamado" && f.DesEstadoVista === "Llamado") {
-            hablar(`Ficha número ${f.Ficha}, paciente ${f.paciente}, por favor diríjase al consultorio`);
+            hablar(`Ficha número ${f.Ficha}, paciente ${f.paciente}, por favor diríjase al ${f.Consultorio}`);
             //hablar_dos(`Ficha número ${f.Ficha}, paciente ${f.paciente}, por favor diríjase al consultorio`, "es-ES-Standard-B");
           }
 
@@ -109,9 +109,7 @@ export default function Fichas() {
     <FichasVista
       fichas={fichas}
       especialidades={especialidades}
-      //fechaSeleccionada={fechaSeleccionada}
       especialidadSeleccionada={especialidadSeleccionada}
-      //setFechaSeleccionada={setFechaSeleccionada}
       setEspecialidadSeleccionada={setEspecialidadSeleccionada}
       cargarEspecialidades={cargarEspecialidades}
       cargarFichas={cargarFichas}

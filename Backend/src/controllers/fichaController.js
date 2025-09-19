@@ -61,8 +61,9 @@ const obtenerFichasPublicas = async (req, res) => {
           Ticket,
           paciente,
           Servicio,
-          medico
-        FROM dbo.vwFICHASPROGRAMADASV3
+          medico,
+          Consultorio
+        FROM dbo.vwFICHASPROGRAMADASV4
         WHERE 
         Servicio = :especialidad
         ORDER BY Periodo, Ficha;

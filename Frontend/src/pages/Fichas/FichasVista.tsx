@@ -100,6 +100,7 @@ export default function FichasVista({
               <th>Horario</th>
               <th>Paciente</th>
               <th>Especialidad</th>
+              <th>Consultorio</th>
               <th>Médico</th>
               <th>Estado</th>
             </tr>
@@ -121,6 +122,7 @@ export default function FichasVista({
                   <td>{f.Horario}</td>
                   <td>{f.paciente}</td>
                   <td>{f.Servicio}</td>
+                  <td>{f.Consultorio}</td>
                   <td>{f.medico}</td>
                   <td>{f.DesEstadoVista}</td>
                 </tr>
