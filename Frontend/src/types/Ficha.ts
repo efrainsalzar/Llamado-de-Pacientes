@@ -10,3 +10,8 @@ export interface Ficha {
   medico: string;
   DesEstadoVista: string;
 }
+
+export interface Especialidad {
+  CUA_CODIGO: number;
+  Especialidad: string;
+}

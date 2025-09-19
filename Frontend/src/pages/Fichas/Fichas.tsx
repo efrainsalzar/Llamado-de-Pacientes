@@ -1,67 +1,41 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
-import { getIO } from "../../services/socket";
-import FichasHtml from "./FichasVista";
-import { Ficha } from '../../types/Ficha';
-
-// ================= Tipos =================
-export interface Especialidad {
-  Especialidad: string;
-}
-
-export interface FichaActualizadaEvent {
-  idFicha: number;
-  estadoNombre: string;
-}
+import { getIO, initSocket } from "../../services/socket";
+import { Ficha, Especialidad } from '../../types/Ficha';
+import FichasVista from "./FichasVista";
 
 // ================= Componente principal =================
 export default function Fichas() {
   // ================= Estados =================
   const [fichas, setFichas] = useState<Ficha[]>([]);
   const [especialidades, setEspecialidades] = useState<Especialidad[]>([]);
-  const [fechaSeleccionada, setFechaSeleccionada] = useState("");
+  //const [fechaSeleccionada, setFechaSeleccionada] = useState("");
   const [especialidadSeleccionada, setEspecialidadSeleccionada] = useState("");
 
   // ================= Socket.IO =================
   useEffect(() => {
-    const socket = getIO(); // Inicializa la conexión a Socket.IO
+    const socket = initSocket(); // Inicializa la conexión a Socket.IO
     console.log("Conectado a Socket.IO");
 
-    // Función que actualiza o agrega fichas al recibir evento desde el servidor
-    /*const actualizarFicha = (f: any) => {
-      console.log("Evento Socket: fichaActualizada", f);
+    const actualizarFicha = (f: Ficha) => {
       setFichas(prev => {
-        const index = prev.findIndex(p => p.idFicha === f.IDFicha);
-        if (index >= 0) {
-          // Actualizar ficha existente
-          const newFichas = [...prev];
-          newFichas[index] = { ...prev[index], ...f, idFicha: f.IDFicha, EstadoFicha: f.EstadoFicha };
-          return newFichas;
-        } else {
-          // Agregar ficha nueva
-          return [...prev, { ...f, idFicha: f.IDFicha }];
-        }
-      });
-    };*/
-
-    const actualizarFicha = (f: any) => {
-      setFichas(prev => {
-        const index = prev.findIndex(p => p.idFicha === f.IDFicha);
+        const index = prev.findIndex(p => p.IDFicha === f.IDFicha);
         const newFichas = [...prev];
 
         if (index >= 0) {
           // Detectar cambio de estado a "Llamado"
           if (prev[index].DesEstadoVista !== "Llamado" && f.DesEstadoVista === "Llamado") {
-            //hablar(`Ficha número ${f.Ficha}, paciente ${f.paciente}, por favor diríjase al consultorio`);
+            hablar(`Ficha número ${f.Ficha}, paciente ${f.paciente}, por favor diríjase al consultorio`);
+            //hablar_dos(`Ficha número ${f.Ficha}, paciente ${f.paciente}, por favor diríjase al consultorio`, "es-ES-Standard-B");
           }
 
-          newFichas[index] = { ...prev[index], ...f, idFicha: f.IDFicha, DesEstadoVista: f.DesEstadoVista };
+          newFichas[index] = { ...prev[index], ...f, IDFicha: f.IDFicha, DesEstadoVista: f.DesEstadoVista };
         } else {
           // Nueva ficha (si ya viene en Llamado, también se habla)
           if (f.DesEstadoVista === "Llamado") {
-            //hablar(`Ficha número ${f.Ficha}, paciente ${f.paciente}, por favor diríjase al consultorio`);
+            hablar(`Ficha número ${f.Ficha}, paciente ${f.paciente}, por favor diríjase al consultorio`);
           }
-          newFichas.push({ ...f, idFicha: f.IDFicha });
+          newFichas.push({ ...f, IDFicha: f.IDFicha });
         }
 
         return newFichas;
@@ -82,10 +56,14 @@ export default function Fichas() {
   useEffect(() => {
     const socket = getIO();
 
-    // Unirse a la room "pantalla_publica" para recibir todas las actualizaciones
-    socket.emit("joinRoom", { room: "pantalla_publica" });
-    console.log("[SOCKET] Conectado a room pantalla_publica");
+    // Unirse a la room pública
+    socket.emit("joinPublic");
+
+    socket.on("joinedPublic", () => {
+      console.log("[SOCKET] Conectado a pantalla_publica");
+    });
   }, []);
+
 
   // ================= Funciones de carga de datos =================
   // Cargar especialidades según la fecha seleccionada
@@ -102,7 +80,7 @@ export default function Fichas() {
 
   // Cargar fichas según fecha y especialidad seleccionadas
   const cargarFichas = async () => {
-    if ( !especialidadSeleccionada) {
+    if (!especialidadSeleccionada) {
       alert("Seleccione especialidad");
       return;
     }
@@ -111,7 +89,16 @@ export default function Fichas() {
       const res = await axios.get<{ data: Ficha[] }>(
         `http://localhost:3000/publicas/${especialidadSeleccionada}`
       );
-      setFichas(res.data.data);
+    const fichasCargadas = res.data.data;
+    setFichas(fichasCargadas);
+    //console.log("datos",res);
+
+    // Revisar si alguna ya está en "Llamado"
+    fichasCargadas.forEach(f => {
+      if (f.DesEstadoVista === "Llamado") {
+        hablar(`Ficha número ${f.Ficha}, paciente ${f.paciente}, por favor diríjase al consultorio`);
+      }
+    });
     } catch (err) {
       console.error("Error al obtener fichas:", err);
     }
@@ -119,12 +106,12 @@ export default function Fichas() {
 
   // ================= Render =================
   return (
-    <FichasHtml
+    <FichasVista
       fichas={fichas}
       especialidades={especialidades}
-      fechaSeleccionada={fechaSeleccionada}
+      //fechaSeleccionada={fechaSeleccionada}
       especialidadSeleccionada={especialidadSeleccionada}
-      setFechaSeleccionada={setFechaSeleccionada}
+      //setFechaSeleccionada={setFechaSeleccionada}
       setEspecialidadSeleccionada={setEspecialidadSeleccionada}
       cargarEspecialidades={cargarEspecialidades}
       cargarFichas={cargarFichas}
@@ -146,3 +133,6 @@ function hablar(texto: string) {
   utterance.volume = 1;      // volumen
   window.speechSynthesis.speak(utterance);
 }
+
+// ================= Función para hablar usando internet =================
+

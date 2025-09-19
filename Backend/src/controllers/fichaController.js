@@ -11,6 +11,7 @@ const getEspecialidad = async (req, res) => {
 
     const [fichas] = await sequelize.query(`
       SELECT DISTINCT
+        CUA_CODIGO,
 	      Servicio AS Especialidad
       FROM dbo.vwFICHASPROGRAMADASV3
     `, {
@@ -51,7 +52,7 @@ const obtenerFichasPublicas = async (req, res) => {
     const [fichas] = await sequelize.query(
       `
         SELECT 
-          idFicha,
+          IDFicha,
           Ficha,
           Periodo,
           DesEstadoVista,
@@ -59,7 +60,7 @@ const obtenerFichasPublicas = async (req, res) => {
           Horario,
           Ticket,
           paciente,
-          Servicio AS Especialidad,
+          Servicio,
           medico
         FROM dbo.vwFICHASPROGRAMADASV3
         WHERE 

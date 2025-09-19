@@ -5,7 +5,7 @@ import './index.css'
 import { initSocket } from "./services/socket";
 
 // Inicializa la conexión del socket al cargar la aplicación
-initSocket();
+//initSocket();
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   //<React.StrictMode>

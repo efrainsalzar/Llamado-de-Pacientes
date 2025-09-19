@@ -20,7 +20,7 @@ export default function Usuarios() {
       axios.defaults.headers.common['Authorization'] = `Bearer ${savedToken}`;
       const user = getUsuarioInfo();
       setUsuario(user);
-      console.log("Usuario desde JWT:", user);
+      //console.log("Usuario desde JWT:", user);
     } else {
       console.log("No hay token en localStorage");
       window.location.href = "/login";

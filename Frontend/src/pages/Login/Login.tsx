@@ -36,7 +36,7 @@ export default function Login() {
       // Guardar datos del usuario si quieres
       localStorage.setItem("usuario", JSON.stringify(data.data));
 
-        console.log("Login exitoso:", data);
+        console.log("Login exitoso:"/*, data*/);
       //  redirigir a la página USUARIOS
         navigate("/usuarios");
         
